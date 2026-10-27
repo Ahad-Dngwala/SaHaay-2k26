@@ -26,6 +26,7 @@
     .card h2 { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
     .badge.available { background: #14532d; color: var(--green); }
+    .badge.searching { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7; }
     .badge.dispatching,.badge.assigned,.badge.enroute { background: #713f12; color: var(--yellow); }
     .badge.breakdown,.badge.failed { background: #7f1d1d; color: var(--red); }
     .badge.completed { background: #1e3a5f; color: #60a5fa; }
@@ -144,14 +145,25 @@
 
   function renderMissions(missions) {
     const tbody = document.getElementById('missions-body');
-    tbody.innerHTML = missions.map(m => `
-      <tr>
-        <td class="mono">${m.id}</td>
-        <td><span class="badge ${m.status.toLowerCase()}">${m.status}</span></td>
-        <td>${(m.currentRadiusM/1000).toFixed(1)} km</td>
-        <td class="mono">${m.assignedAmbulanceId ?? '—'}</td>
-        <td class="mono">${new Date(m.updatedAt).toLocaleTimeString()}</td>
-      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">No missions</td></tr>';
+    tbody.innerHTML = missions.map(m => {
+      let ambuCol = '—';
+      if (m.assignedAmbulanceId) {
+        ambuCol = `<strong style="color:var(--green)">🚑 ${m.assignedAmbulanceId}</strong>`;
+      } else if (m.pendingOffers && m.pendingOffers.length) {
+        ambuCol = `<span style="color:var(--yellow)">Offered: ${m.pendingOffers.join(', ')}</span>`;
+      } else {
+        ambuCol = `<span style="color:var(--muted)">Expanding search ring...</span>`;
+      }
+
+      return `
+        <tr>
+          <td class="mono"><strong>#${m.id}</strong></td>
+          <td><span class="badge ${m.status.toLowerCase()}">${m.status}</span></td>
+          <td>${(m.currentRadiusM/1000).toFixed(1)} km</td>
+          <td>${ambuCol}</td>
+          <td class="mono">${new Date(m.updatedAt).toLocaleTimeString()}</td>
+        </tr>`;
+    }).join('') || '<tr><td colspan="5" style="color:var(--muted)">No active missions</td></tr>';
   }
 
   function renderAmbulances(ambus) {
@@ -222,7 +234,7 @@
 
   connect();
   refresh();
-  setInterval(refresh, 3000);
+  setInterval(refresh, 1500);
 </script>
 </body>
 </html>

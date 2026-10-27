@@ -13,10 +13,11 @@ import {
   updateMissionStatus,
   updatePatientLocation,
   setDemoTimeScale,
+  tryExpandNow,
 } from './dispatch';
 import { auditLog, verifyChain, tamperEntry } from './audit';
 import { seedAmbulances } from './seed';
-import { syncGrid } from './matching';
+import { syncGrid, findAvailable } from './matching';
 import { broadcastToAll } from './ws';
 
 // Codec - inline the decode logic to avoid cross-package imports
@@ -163,6 +164,27 @@ export function createRouter(): Router {
     const { ambulanceId } = req.body as { ambulanceId: string };
     declineMission(req.params.id, ambulanceId);
     res.json({ ok: true });
+  });
+
+  router.post('/missions/:id/expand', (req: Request, res: Response) => {
+    tryExpandNow(req.params.id);
+    const m = state.missions.get(req.params.id);
+    res.json({ ok: true, mission: m });
+  });
+
+  router.post('/missions/:id/quick-assign', (req: Request, res: Response) => {
+    const m = state.missions.get(req.params.id);
+    if (!m) { res.status(404).json({ error: 'not found' }); return; }
+    const available = findAvailable(state.ambulances, m.patientLatLive, m.patientLonLive, 8000);
+    if (!available.length) { res.status(400).json({ error: 'no available ambulances' }); return; }
+    
+    const targetAmbuId = m.pendingOffers[0] || available[0].id;
+    if (!m.pendingOffers.includes(targetAmbuId)) {
+      m.pendingOffers.push(targetAmbuId);
+      m.status = 'DISPATCHING';
+    }
+    const result = acceptMission(m.id, targetAmbuId);
+    res.json({ ok: true, ...result });
   });
 
   router.post('/missions/:id/breakdown', (req: Request, res: Response) => {

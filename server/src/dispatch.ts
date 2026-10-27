@@ -88,7 +88,7 @@ function _searchRing(missionId: string): void {
   const eligible = candidates.filter(c => !m.previousAmbulanceIds.includes(c.id));
 
   if (eligible.length === 0) {
-    // No candidates in this ring — try to expand
+    // No candidates in this ring — schedule expansion
     _scheduleExpansion(missionId);
     return;
   }
@@ -121,8 +121,24 @@ function _searchRing(missionId: string): void {
   // Notify citizen
   broadcastToMission(missionId, { type: 'MISSION_SEARCHING', missionId, radiusM: m.currentRadiusM });
 
-  // Schedule offer timeout → expansion
+  // For prototype demo: simulated driver accepts nearest offer after short 1.5s reaction delay
+  const winnerCandidateId = eligible[0].id;
+  const autoAcceptTimer = setTimeout(() => {
+    const cur = state.missions.get(missionId);
+    if (cur && cur.status === 'DISPATCHING' && cur.pendingOffers.includes(winnerCandidateId)) {
+      acceptMission(missionId, winnerCandidateId);
+    }
+  }, scaledMs(1.5));
+  if (autoAcceptTimer && (autoAcceptTimer as any).unref) (autoAcceptTimer as any).unref();
+
+  // Schedule offer timeout → expansion if no one accepts
   _scheduleExpansion(missionId);
+}
+
+export function tryExpandNow(missionId: string): void {
+  const timerItem = state.expansionTimers.get(missionId);
+  if (timerItem) { clearTimeout(timerItem.timer); state.expansionTimers.delete(missionId); }
+  _tryExpand(missionId);
 }
 
 function _scheduleExpansion(missionId: string): void {
@@ -146,6 +162,8 @@ function _scheduleExpansion(missionId: string): void {
     nominalDurationS,
   });
 }
+
+
 
 function _tryExpand(missionId: string): void {
   const m = state.missions.get(missionId);
