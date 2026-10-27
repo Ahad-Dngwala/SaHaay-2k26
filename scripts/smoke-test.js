@@ -77,12 +77,11 @@ function verifyControl() {
     let body = '';
     res.on('data', (chunk) => { body += chunk; });
     res.on('end', () => {
-      cleanup();
       if (res.statusCode === 200 && (body.includes('SaHaay') || body.includes('<!DOCTYPE html>'))) {
         console.log('✅ /control responded 200 OK with valid HTML dashboard.');
-        console.log('🎉 Runtime smoke test passed successfully.');
-        process.exit(0);
+        verifySos();
       } else {
+        cleanup();
         console.error(`❌ /control failed with status ${res.statusCode}`);
         process.exit(1);
       }
@@ -90,6 +89,28 @@ function verifyControl() {
   }).on('error', (err) => {
     cleanup();
     console.error(`❌ Failed to request /control: ${err.message}`);
+    process.exit(1);
+  });
+}
+
+function verifySos() {
+  http.get(`http://localhost:${PORT}/sos`, (res) => {
+    let body = '';
+    res.on('data', (chunk) => { body += chunk; });
+    res.on('end', () => {
+      cleanup();
+      if (res.statusCode === 200 && (body.includes('SaHaay SOS') || body.includes('<!DOCTYPE html>'))) {
+        console.log('✅ /sos responded 200 OK with valid Citizen SOS interface.');
+        console.log('🎉 Runtime smoke test passed successfully.');
+        process.exit(0);
+      } else {
+        console.error(`❌ /sos failed with status ${res.statusCode}`);
+        process.exit(1);
+      }
+    });
+  }).on('error', (err) => {
+    cleanup();
+    console.error(`❌ Failed to request /sos: ${err.message}`);
     process.exit(1);
   });
 }

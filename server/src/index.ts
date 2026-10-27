@@ -30,6 +30,12 @@ app.get('/control', (_req, res) => {
   res.sendFile(path.join(__dirname, 'control.html'));
 });
 
+// ── Citizen SOS Interface (served at /sos) ───────────────────────────────────
+app.get('/sos', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'sos.html'));
+});
+
+
 // ── API routes ────────────────────────────────────────────────────────────────
 app.use('/', createRouter());
 

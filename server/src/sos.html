@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>SaHaay — Citizen Emergency SOS</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --card-border: #1e293b;
+      --accent: #ef4444;
+      --accent-glow: rgba(239, 68, 68, 0.4);
+      --amber: #f59e0b;
+      --green: #10b981;
+      --blue: #3b82f6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .nav-link {
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 4px 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 6px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .mode-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status-pill.online { background: rgba(16, 185, 129, 0.15); color: var(--green); }
+    .status-pill.offline { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-pill.online .status-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-pill.offline .status-dot { background: var(--amber); }
+    
+    .field-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+    }
+    select, input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--blue); }
+
+    /* SOS Big Button */
+    .sos-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 0 16px 0;
+    }
+    .sos-btn {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f87171, #dc2626 60%, #991b1b);
+      border: 6px solid rgba(254, 202, 202, 0.2);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 38px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 0 35px var(--accent-glow), 0 10px 20px rgba(0,0,0,0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .sos-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .sos-subtext {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: pulse 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+      pointer-events: none;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-crash {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      margin-top: 8px;
+    }
+    .btn-crash:hover { background: #334155; }
+    .btn-secondary { background: #334155; color: #fff; }
+    .btn-danger { background: var(--accent); color: #fff; }
+
+    /* Countdown Modal */
+    .countdown-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .countdown-box {
+      width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(239, 68, 68, 0.3);
+    }
+    .timer-circle {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 4px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 16px auto;
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    /* Active Mission View */
+    .mission-view { display: none; }
+    .mission-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .eta-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .eta-num { font-size: 28px; font-weight: 800; color: var(--accent); }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .info-label { color: var(--muted); }
+    .info-val { font-weight: 600; }
+    .sms-payload-box {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--amber);
+      word-break: break-all;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <header>
+    <div class="logo">
+      <span>🚑</span>
+      <span>SaHaay SOS</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="/control" class="nav-link">Control Grid ↗</a>
+    </div>
+  </header>
+
+  <!-- Citizen Setup Card -->
+  <div class="card" id="setup-card">
+    <div class="mode-bar">
+      <span class="field-label" style="margin:0;">Network Mode</span>
+      <div class="status-pill online" id="mode-pill" onclick="toggleMode()">
+        <span class="status-dot"></span>
+        <span id="mode-text">ONLINE (DATA)</span>
+      </div>
+    </div>
+
+    <label class="field-label" for="locality-select">Emergency Location</label>
+    <select id="locality-select">
+      <option value="23.0222,72.5804,8">Ashram Road Circle (23.0222, 72.5804)</option>
+      <option value="23.0365,72.5611,12">Navrangpura Commerce Six (23.0365, 72.5611)</option>
+      <option value="23.0714,72.5811,17">Sabarmati Powerhouse (23.0714, 72.5811)</option>
+      <option value="23.0525,72.5120,24">SG Highway Thaltej Cross (23.0525, 72.5120)</option>
+      <option value="22.9978,72.6033,31">Maninagar Station (22.9978, 72.6033)</option>
+    </select>
+
+    <div class="sos-area">
+      <button class="sos-btn" id="sos-btn" onclick="startEmergencyTrigger('MANUAL')">
+        <div class="pulse-ring"></div>
+        <span>SOS</span>
+        <span class="sos-subtext">DISPATCH</span>
+      </button>
+    </div>
+
+    <button class="btn btn-crash" onclick="startEmergencyTrigger('CRASH')">
+      <span>💥</span> Simulate Crash Detection (2.8g Impact)
+    </button>
+  </div>
+
+  <!-- Active Mission Card -->
+  <div class="card mission-view" id="mission-card">
+    <div class="mission-header">
+      <div>
+        <span class="field-label" style="margin:0;">Active Emergency</span>
+        <h3 id="mission-id" style="font-size:16px;">Mission #—</h3>
+      </div>
+      <span class="status-pill online" id="mission-status-pill">SEARCHING</span>
+    </div>
+
+    <div class="eta-box">
+      <div class="eta-num" id="eta-display">--s</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;">Ambulance Estimated Arrival</div>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">Assigned Vehicle</span>
+      <span class="info-val" id="amb-plate">Searching...</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Driver Name</span>
+      <span class="info-val" id="amb-driver">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Search Radius</span>
+      <span class="info-val" id="search-radius">500 m</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Patient Coords</span>
+      <span class="info-val" id="patient-coords">23.0222, 72.5804</span>
+    </div>
+
+    <div style="margin-top:14px;">
+      <span class="field-label">Simulated Protocol Packet</span>
+      <div class="sms-payload-box" id="protocol-packet">S1|...</div>
+    </div>
+
+    <button class="btn btn-danger" style="margin-top:14px;background:#7f1d1d;border:1px solid #ef4444;" onclick="simulateBreakdown()">
+      ⚠️ Simulate En-Route Breakdown (Test Failover)
+    </button>
+  </div>
+</div>
+
+<!-- 30-Second Countdown Overlay -->
+<div class="countdown-overlay" id="countdown-modal">
+  <div class="countdown-box">
+    <h2 style="font-size:18px;color:#f87171;" id="countdown-title">🚨 Emergency Triggered</h2>
+    <p style="font-size:12px;color:var(--muted);margin-top:6px;">Broadcasting ambulance rescue request in</p>
+    
+    <div class="timer-circle" id="timer-display">30</div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+      <button class="btn btn-danger" onclick="confirmDispatchNow()">🚨 DISPATCH IMMEDIATELY</button>
+      <button class="btn btn-secondary" onclick="cancelCountdown()">❌ I AM OK (CANCEL)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let isOfflineMode = false;
+  let countdownSec = 30;
+  let countdownInterval = null;
+  let activeMissionId = null;
+  let pollInterval = null;
+  let currentTriggerType = 'MANUAL';
+
+  function toggleMode() {
+    isOfflineMode = !isOfflineMode;
+    const pill = document.getElementById('mode-pill');
+    const text = document.getElementById('mode-text');
+    if (isOfflineMode) {
+      pill.className = 'status-pill offline';
+      text.textContent = 'OFFLINE (SIMULATED SMS)';
+    } else {
+      pill.className = 'status-pill online';
+      text.textContent = 'ONLINE (DATA)';
+    }
+  }
+
+  function startEmergencyTrigger(type) {
+    currentTriggerType = type;
+    document.getElementById('countdown-title').textContent = type === 'CRASH' 
+      ? '💥 Crash Impact Detected!' 
+      : '🚨 Citizen SOS Triggered';
+    
+    countdownSec = 30;
+    document.getElementById('timer-display').textContent = countdownSec;
+    document.getElementById('countdown-modal').style.display = 'flex';
+
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      countdownSec--;
+      document.getElementById('timer-display').textContent = countdownSec;
+      if (countdownSec <= 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('countdown-modal').style.display = 'none';
+        executeDispatch();
+      }
+    }, 1000);
+  }
+
+  function cancelCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    document.getElementById('countdown-modal').style.display = 'none';
+    alert('SOS cancelled. No ambulance was dispatched.');
+  }
+
+  function confirmDispatchNow() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    document.getElementById('countdown-modal').style.display = 'none';
+    executeDispatch();
+  }
+
+  async function executeDispatch() {
+    const locality = document.getElementById('locality-select').value.split(',');
+    const lat = parseFloat(locality[0]);
+    const lon = parseFloat(locality[1]);
+    const addrId = parseInt(locality[2] || '8');
+    const sosUid = 'sos-' + Date.now().toString(36);
+
+    document.getElementById('setup-card').style.display = 'none';
+    document.getElementById('mission-card').style.display = 'block';
+    document.getElementById('patient-coords').textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+
+    try {
+      if (isOfflineMode) {
+        // Simulated SMS Fallback protocol packet
+        const geohash = 'ts5e587pk';
+        const packet = `S1|${sosUid.slice(-4)}|0|${geohash}|${Math.round(lat*10000)}|${Math.round(lon*10000)}|${addrId}|1|f6`;
+        document.getElementById('protocol-packet').textContent = packet;
+
+        const res = await fetch('/sms/inbound', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: packet })
+        }).then(r => r.json());
+
+        activeMissionId = res.missionId;
+      } else {
+        // Standard HTTP / WebSocket SOS dispatch
+        document.getElementById('protocol-packet').textContent = `POST /sos { lat: ${lat}, lon: ${lon}, severity: "CRITICAL" }`;
+        const res = await fetch('/sos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lat, lon, addrId,
+            patientName: 'Aarav Sharma',
+            severity: 'CRITICAL',
+            sosUid
+          })
+        }).then(r => r.json());
+
+        activeMissionId = res.missionId;
+      }
+
+      document.getElementById('mission-id').textContent = `Mission #${activeMissionId}`;
+      startMissionPolling();
+    } catch (err) {
+      alert('Error triggering dispatch: ' + err.message);
+    }
+  }
+
+  function startMissionPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+      if (!activeMissionId) return;
+      try {
+        const m = await fetch(`/missions/${activeMissionId}`).then(r => r.json());
+        if (!m || m.error) return;
+
+        document.getElementById('mission-status-pill').textContent = m.status;
+        document.getElementById('search-radius').textContent = `${(m.currentRadiusM || 500)} m`;
+
+        if (m.assignedAmbulanceId) {
+          const ambus = await fetch('/ambulances').then(r => r.json());
+          const amb = ambus.find(a => a.id === m.assignedAmbulanceId);
+          if (amb) {
+            document.getElementById('amb-plate').textContent = amb.vehicleNo || amb.id;
+            document.getElementById('amb-driver').textContent = amb.driverName || 'En Route';
+            document.getElementById('eta-display').textContent = '120s';
+          }
+        }
+
+        if (m.status === 'ASSIGNED' || m.status === 'EN_ROUTE') {
+          document.getElementById('mission-status-pill').className = 'status-pill online';
+        } else if (m.status === 'BREAKDOWN') {
+          document.getElementById('mission-status-pill').className = 'status-pill offline';
+          document.getElementById('amb-plate').textContent = 'RE-DISPATCHING...';
+        }
+      } catch (e) { console.error(e); }
+    }, 1500);
+  }
+
+  async function simulateBreakdown() {
+    if (!activeMissionId) return;
+    const m = await fetch(`/missions/${activeMissionId}`).then(r => r.json());
+    if (!m.assignedAmbulanceId) {
+      alert('No ambulance assigned yet to break down.');
+      return;
+    }
+    await fetch(`/missions/${activeMissionId}/breakdown`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ambulanceId: m.assignedAmbulanceId, reason: 'TIRE_PUNCTURE' })
+    });
+    alert('Simulated breakdown reported! Watch automatic re-dispatch to patient live GPS.');
+  }
+</script>
+</body>
+</html>
