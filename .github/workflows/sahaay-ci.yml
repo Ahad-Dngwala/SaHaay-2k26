@@ -1,6 +1,5 @@
 name: SaHaay CI
-
-'on':
+on:
   push:
     branches:
       - main
@@ -18,19 +17,19 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build, Typecheck, Test & Benchmark
+    name: "Build, Typecheck, Test and Benchmark"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: "Checkout repository"
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20 LTS
+      - name: "Setup Node.js 20 LTS"
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
 
-      - name: Validate Repository Hygiene
+      - name: "Validate Repository Hygiene"
         run: |
           echo "🔍 Checking for sensitive files in git index..."
           TRACKED_SENSITIVE=$(git ls-files .env "*.pem" "*.key" "id_rsa*" "*.pfx")
@@ -40,25 +39,25 @@ jobs:
           fi
           echo "✅ Repository hygiene check passed: zero secret files tracked."
 
-      - name: Install dependencies (npm ci)
+      - name: "Install dependencies (npm ci)"
         run: npm ci
 
-      - name: TypeScript Typecheck
+      - name: "TypeScript Typecheck"
         run: npm run typecheck
 
-      - name: Build Server
+      - name: "Build Server"
         run: npm run build:server
 
-      - name: Automated Unit & Golden Path Tests (fails if 0 tests discovered)
+      - name: "Automated Unit and Golden Path Tests (fails if 0 tests discovered)"
         run: npm run test:ci
 
-      - name: Runtime Smoke Test (Isolated Port /health & /control)
+      - name: "Runtime Smoke Test (Isolated Port /health and /control)"
         run: npm run test:smoke
 
-      - name: Spatial Matching Benchmark (<200ms threshold assertion)
+      - name: "Spatial Matching Benchmark (under 200ms threshold assertion)"
         run: npm run bench
 
-      - name: Upload Benchmark Report Artifact
+      - name: "Upload Benchmark Report Artifact"
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -67,22 +66,22 @@ jobs:
           if-no-files-found: warn
 
   security-audit:
-    name: Dependency Security Audit
+    name: "Dependency Security Audit"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: "Checkout repository"
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20 LTS
+      - name: "Setup Node.js 20 LTS"
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
 
-      - name: Install dependencies (npm ci)
+      - name: "Install dependencies (npm ci)"
         run: npm ci
 
-      - name: Run Production Dependency Audit
+      - name: "Run Production Dependency Audit"
         run: |
           echo "🛡️ Running npm audit for production dependencies..."
           # Audit production dependencies and report findings
