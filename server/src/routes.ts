@@ -122,6 +122,24 @@ export function createRouter(): Router {
     res.status(201).json({ ok: true, missionId: mission.id });
   });
 
+  // ── SOS Direct Trigger (Alias for /missions) ─────────────────────────────────
+  router.post('/sos', (req: Request, res: Response) => {
+    const { lat, lon, addrId = 0, flags = 0, sosUid } = req.body as { lat: number; lon: number; addrId?: number; flags?: number; sosUid?: string };
+    if (lat === undefined || lon === undefined) { res.status(400).json({ error: 'lat and lon required' }); return; }
+
+    const uid = sosUid ?? `sos-${Date.now()}`;
+    if (seenSosUids.has(uid)) {
+      const existing = Array.from(state.missions.values()).find(m => m.sosUid === uid);
+      res.json({ ok: true, missionId: existing?.id, idempotent: true });
+      return;
+    }
+    seenSosUids.add(uid);
+
+    const mission = createMission({ patientLat: lat, patientLon: lon, addrId, flags, sosUid: uid });
+    res.status(201).json({ ok: true, missionId: mission.id, status: mission.status });
+  });
+
+
   router.post('/missions/:id/accept', (req: Request, res: Response) => {
     const { ambulanceId } = req.body as { ambulanceId: string };
     if (!ambulanceId) {

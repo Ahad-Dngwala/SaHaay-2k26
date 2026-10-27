@@ -48,6 +48,12 @@
     .conn-dot.connected { background: var(--green); }
     #log { height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; color: var(--muted); background: #0d1117; border-radius: 6px; padding: 8px; }
     .full-width { grid-column: 1 / -1; }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; padding: 10px; }
+      header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; }
+      header div:last-child { flex-wrap: wrap; margin-left: 0 !important; width: 100%; }
+      header h1 { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
