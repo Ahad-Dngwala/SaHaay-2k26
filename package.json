@@ -1,40 +1,60 @@
 {
-  "name": "ambulance-dispatch-backend",
+  "name": "sahaay-2k26",
   "version": "1.0.0",
-  "description": "Distributed Ambulance Dispatch Platform Backend - Production Ready Emergency System",
-  "main": "backend/server.js",
+  "private": true,
+  "description": "SaHaay — offline-first emergency ambulance dispatch. Hack for Social Cause 2027.",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "nodemon backend/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently --kill-others-on-fail --names \"server,expo\" -c \"cyan,magenta\" \"npm run dev:server\" \"npm run dev:expo\"",
+    "dev:server": "cd server && npx ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev:expo": "cd app && npx expo start --web",
+    "test": "jest --testPathPattern=\"src/core|server/src\" --passWithNoTests",
+    "bench": "cd server && npx ts-node src/bench.ts",
+    "build:server": "cd server && npx tsc --noEmit",
+    "typecheck": "npx tsc --noEmit --project tsconfig.json && cd server && npx tsc --noEmit && cd ../app && npx tsc --noEmit"
   },
-  "keywords": [
-    "ambulance",
-    "dispatch",
-    "emergency",
-    "geolocation",
-    "websocket",
-    "real-time"
+  "workspaces": [
+    "server",
+    "app"
   ],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^1.6.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.0.3",
-    "nodemailer": "^6.9.8",
-    "redis": "^4.6.12",
-    "socket.io": "^4.7.2",
-    "twilio": "^4.19.0"
-  },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.2",
+    "typescript": "^5.4.5"
   },
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src/core",
+      "<rootDir>/server/src"
+    ],
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": {
+          "strict": true,
+          "esModuleInterop": true,
+          "moduleResolution": "node"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@turf/along": "^7.4.0",
+    "@turf/bearing": "^7.4.0",
+    "@turf/destination": "^7.4.0",
+    "@turf/distance": "^7.4.0",
+    "@turf/helpers": "^7.4.0",
+    "@turf/nearest-point-on-line": "^7.4.0"
   }
 }

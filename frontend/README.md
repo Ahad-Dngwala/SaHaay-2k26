@@ -1,4 +1,9 @@
-# 🚑 Ambulance Dispatch Frontend
+# 🚑 SaHaay Frontend (Legacy Vite Web Client)
+
+> [!NOTE]
+> This folder contains the legacy Vite + React 18 web dashboard and historical Expo 49 packages.  
+> For the new zero-dependency in-memory dispatch server and unified architecture, see [README.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/README.md) and [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md).  
+> The new standalone Control Dashboard is served directly at `http://localhost:3000/control`.
 
 Complete React frontend for the Emergency Ambulance Dispatch Platform.
 

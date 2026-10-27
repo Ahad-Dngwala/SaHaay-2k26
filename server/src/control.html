@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SaHaay — Control Dashboard</title>
+  <style>
+    :root {
+      --bg: #0a0f1a;
+      --surface: #111827;
+      --border: #1f2937;
+      --accent: #f97316;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --text: #e5e7eb;
+      --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+    header .status { font-size: 12px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge.available { background: #14532d; color: var(--green); }
+    .badge.dispatching,.badge.assigned,.badge.enroute { background: #713f12; color: var(--yellow); }
+    .badge.breakdown,.badge.failed { background: #7f1d1d; color: var(--red); }
+    .badge.completed { background: #1e3a5f; color: #60a5fa; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 500; }
+    td { font-size: 13px; }
+    .mono { font-family: monospace; font-size: 11px; color: var(--muted); }
+    .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .btn-danger { background: #7f1d1d; color: var(--red); border: 1px solid var(--red); }
+    .btn-primary { background: #ea580c; color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    #verify-result { margin-top: 8px; padding: 8px; border-radius: 6px; display: none; font-weight: 600; }
+    #verify-result.pass { background: #14532d; color: var(--green); display: block; }
+    #verify-result.fail { background: #7f1d1d; color: var(--red); display: block; }
+    .corridor-alert { background: #2d1b00; border: 1px solid var(--yellow); border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; }
+    .corridor-alert .junction { font-weight: 600; color: var(--yellow); }
+    .corridor-alert .eta { font-size: 12px; color: var(--muted); }
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 6px; }
+    .conn-dot.connected { background: var(--green); }
+    #log { height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; color: var(--muted); background: #0d1117; border-radius: 6px; padding: 8px; }
+    .full-width { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🚑 SaHaay — Control &amp; Traffic Authority Dashboard</h1>
+  <span class="status"><span class="conn-dot" id="conn-dot"></span><span id="conn-status">Connecting…</span></span>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button class="btn btn-danger" onclick="tamper()">⚠ Tamper Entry (Demo)</button>
+    <button class="btn btn-ghost" onclick="verify()">🔐 Verify Chain</button>
+    <button class="btn btn-primary" onclick="reset()">♻ Reset World</button>
+  </div>
+</header>
+<div class="grid">
+  <div class="card">
+    <h2>Live Missions</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th>Radius</th><th>Ambulance</th><th>Updated</th></tr></thead>
+      <tbody id="missions-body"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Ambulance Fleet</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Driver</th><th>Zone</th><th>Status</th></tr></thead>
+      <tbody id="ambulances-body"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>🚦 Green Corridor Alerts</h2>
+    <div id="corridor-alerts"><em style="color:var(--muted)">No active alerts.</em></div>
+  </div>
+  <div class="card">
+    <h2>🔐 Audit Log <span id="audit-count" class="mono"></span></h2>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button class="btn btn-ghost" onclick="verify()">Verify Chain</button>
+      <button class="btn btn-danger" onclick="tamper()">Tamper Entry 0</button>
+    </div>
+    <div id="verify-result"></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+  const API = window.location.origin;
+  let ws;
+  const corridorMap = new Map();
+
+  function connect() {
+    ws = new WebSocket(`ws://${window.location.host}?role=control`);
+    ws.onopen = () => {
+      document.getElementById('conn-dot').className = 'conn-dot connected';
+      document.getElementById('conn-status').textContent = 'Connected';
+    };
+    ws.onclose = () => {
+      document.getElementById('conn-dot').className = 'conn-dot';
+      document.getElementById('conn-status').textContent = 'Disconnected — reconnecting…';
+      setTimeout(connect, 2000);
+    };
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'GREEN_CORRIDOR_UPDATE') {
+        corridorMap.set(msg.missionId, msg);
+        renderCorridors();
+      }
+      refresh();
+    };
+  }
+
+  async function refresh() {
+    try {
+      const [missionsRes, ambuRes, auditRes] = await Promise.all([
+        fetch(`${API}/missions`).then(r => r.json()),
+        fetch(`${API}/ambulances`).then(r => r.json()),
+        fetch(`${API}/audit`).then(r => r.json()),
+      ]);
+      renderMissions(missionsRes);
+      renderAmbulances(ambuRes);
+      renderAudit(auditRes);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderMissions(missions) {
+    const tbody = document.getElementById('missions-body');
+    tbody.innerHTML = missions.map(m => `
+      <tr>
+        <td class="mono">${m.id}</td>
+        <td><span class="badge ${m.status.toLowerCase()}">${m.status}</span></td>
+        <td>${(m.currentRadiusM/1000).toFixed(1)} km</td>
+        <td class="mono">${m.assignedAmbulanceId ?? '—'}</td>
+        <td class="mono">${new Date(m.updatedAt).toLocaleTimeString()}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">No missions</td></tr>';
+  }
+
+  function renderAmbulances(ambus) {
+    const tbody = document.getElementById('ambulances-body');
+    tbody.innerHTML = ambus.map(a => `
+      <tr>
+        <td class="mono">${a.id}</td>
+        <td>${a.driverName}</td>
+        <td>${a.zone}</td>
+        <td><span class="badge ${a.status.toLowerCase()}">${a.status}</span></td>
+      </tr>`).join('');
+  }
+
+  function renderAudit(entries) {
+    document.getElementById('audit-count').textContent = `(${entries.length} entries)`;
+    const log = document.getElementById('log');
+    log.innerHTML = entries.slice(-30).reverse().map(e =>
+      `<div>[${new Date(e.timestamp).toLocaleTimeString()}] <strong>${e.event}</strong> ${JSON.stringify(e.data).slice(0,80)}</div>`
+    ).join('');
+  }
+
+  function renderCorridors() {
+    const el = document.getElementById('corridor-alerts');
+    const alerts = [];
+    for (const [mid, msg] of corridorMap) {
+      for (const cp of (msg.checkpoints || [])) {
+        if (!cp.alerted) {
+          alerts.push(`<div class="corridor-alert">
+            <div class="junction">🚦 ${cp.name}</div>
+            <div class="eta">Ambulance ${msg.ambulanceId} ETA: ${cp.etaS}s | Mission ${mid}</div>
+          </div>`);
+        }
+      }
+    }
+    el.innerHTML = alerts.length ? alerts.join('') : '<em style="color:var(--muted)">No active alerts.</em>';
+  }
+
+  async function verify() {
+    const res = await fetch(`${API}/audit/verify`).then(r => r.json());
+    const el = document.getElementById('verify-result');
+    el.className = res.valid ? 'pass' : 'fail';
+    el.textContent = res.valid
+      ? `✅ Chain VALID — ${res.checkedEntries} entries verified`
+      : `❌ Chain INVALID at entry ${res.firstFailIndex}: ${res.reason}`;
+  }
+
+  async function tamper() {
+    await fetch(`${API}/audit/tamper`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ index: 0 }) });
+    refresh();
+    alert('Entry 0 tampered. Click "Verify Chain" to see the failure.');
+  }
+
+  async function reset() {
+    if (!confirm('Reset the entire world? (Re-seeds 25 ambulances)')) return;
+    await fetch(`${API}/demo/reset`, { method: 'POST' });
+    corridorMap.clear();
+    refresh();
+  }
+
+  connect();
+  refresh();
+  setInterval(refresh, 3000);
+</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
-# ✅ Complete Feature Implementation
+# ✅ Feature Implementation — Legacy Web Client (Vite)
 
-## Your Solution ✅ Fully Implemented
+> [!NOTE]
+> This document records the feature set implemented for the legacy Vite dashboard.  
+> For the new in-memory dispatch engine, sub-millisecond benchmarks, compact Base36 SMS protocol, and SHA-256 audit chain, please refer to [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md) and the root [README.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/README.md).
 
 ### 1. **Emergency Detection & Creation**
 ✅ **ACCIDENT DETECTED BUTTON**

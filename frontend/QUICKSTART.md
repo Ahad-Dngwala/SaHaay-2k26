@@ -1,6 +1,8 @@
-# 🚀 Quick Start Guide - Frontend
+# 🚀 Quick Start Guide — Legacy Frontend (Vite)
 
-## Installation
+> [!NOTE]
+> This quickstart is for the legacy Vite client (`frontend/`).  
+> The primary hackathon runner requires **zero cloud setup** and starts with `npm run dev:server` from the repository root. See [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md) for details.
 
 ```bash
 cd frontend
