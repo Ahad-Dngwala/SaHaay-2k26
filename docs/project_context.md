@@ -99,6 +99,7 @@ frontend/            Legacy Vite web app + Expo 49 sketches
 | Crash detection with stillness filter | ✅ | `src/core/crash/CrashDetector.ts` ($2.5\text{ g}$ impact + $1000\text{ ms}$ stillness) |
 | 30s Countdown Safety Timer | ✅ | `src/core/crash/CountdownTimer.ts` (cancel guarantee, exactly-once SOS) |
 | Green corridor junction pre-clearance | ✅ | `_generateGreenCorridor` in `server/src/dispatch.ts` + `/control` dashboard |
+| Citizen SOS web testing portal | ✅ | `server/src/sos.html` (`http://localhost:3000/sos`) with Base36 token generation |
 | Automated test suite | ✅ | **58 automated tests passing across 7 suites** via `npm test` |
 | "< 200 ms dispatch" claim | ✅ | **$0.0033\text{ ms}$ ($3.3\ \mu\text{s}$) measured** via `npm run bench` (`docs/BENCHMARK.md`) |
 
@@ -111,6 +112,7 @@ frontend/            Legacy Vite web app + Expo 49 sketches
 npm install
 npm run dev:server    # Starts dispatch server on :3000
 # Control dashboard: http://localhost:3000/control
+# Citizen SOS:       http://localhost:3000/sos
 # Health endpoint:   http://localhost:3000/health
 
 npm test              # Executes all 58 automated tests across 7 test suites

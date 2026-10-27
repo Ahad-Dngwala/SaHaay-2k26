@@ -22,6 +22,7 @@ Companion to `project_context.md` and [docs/progress.md](progress.md). This trac
 | A6 | **High-performance spatial grid**: $0.01^\circ$ spatial cell binning + Haversine lookup | ✅ DONE | `server/src/matching.ts` |
 | A7 | **Tamper-evident audit trail**: append-only SHA-256 cryptographic hash chain | ✅ DONE | `server/src/audit.ts` (`verifyChain`, `tamperEntry`) |
 | A8 | **Inbound SMS webhook**: handle compact Base36 tokens via `/sms/inbound` | ✅ DONE | Implemented in `server/src/routes.ts` |
+| A9 | **Driver simulation & fast triage APIs**: auto-accept nearest offer in 1.5s, `/missions/:id/expand`, `/missions/:id/quick-assign` | ✅ DONE | `dispatch.ts` & `routes.ts` |
 
 ---
 
@@ -51,6 +52,7 @@ Companion to `project_context.md` and [docs/progress.md](progress.md). This trac
 | C6 | **Demo Director & Time Scale**: scale timers by $10\times$ with dynamic rescheduling | ✅ DONE | `DEMO_TIME_SCALE` + `/demo/time-scale` |
 | C7 | **System status & documentation audit**: record all decisions, specs, and claims | ✅ DONE | `docs/STATUS.md`, `progress.md`, `README.md` |
 | C8 | **E2E golden path test**: automated 8-stage journey validation | ✅ DONE | `server/src/e2e-journey.test.ts` (1 test covering 8 stages) |
+| C9 | **Citizen SOS web interface & badge updates**: live testing portal at `:3000/sos` with hotspot presets | ✅ DONE | `server/src/sos.html` + `server/src/control.html` |
 
 ---
 

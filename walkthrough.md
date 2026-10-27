@@ -117,17 +117,25 @@ Ambulances are indexed into a **0.01° spatial cell grid** ($\approx 1.11\text{ 
 
 ### Stage 2: SOS Trigger & Crash Detection
 
-Emergencies can be triggered via two methods:
+Emergencies can be triggered via three convenient methods:
 
-#### Option A: Manual Citizen SOS (UI or API)
-Click **"Trigger SOS"** in the dashboard, or send via `curl`:
+#### Option A: Dedicated Citizen SOS Web Portal (`/sos`)
+Open **`http://localhost:3000/sos`** in a second browser window:
+- Choose from preset Ahmedabad emergency locations:
+  - **Navrangpura** (`23.0330, 72.5607`): Matches within 390m (Ring 1) for **instant assignment** to AMB-01/02.
+  - **Sabarmati** (`23.0800, 72.5900`): Instant assignment to AMB-13.
+  - **Ashram Road Circle** (`23.0222, 72.5804`): Illustrates the progressive multi-ring expansion ladder.
+- Click **"Send Emergency SOS"**: Generates a valid Base36 offline token (`S1|...`), transmits to the server, and renders real-time tracking with live ETA and driver details via WebSockets!
+
+#### Option B: Manual Citizen SOS API
+Send directly via `curl`:
 ```bash
 curl -X POST http://localhost:3000/sos \
   -H "Content-Type: application/json" \
   -d '{"lat": 23.0300, "lon": 72.5800, "patientName": "Aarav Sharma", "severity": "CRITICAL"}'
 ```
 
-#### Option B: Automatic Sensor Crash Detection
+#### Option C: Automatic Sensor Crash Detection
 The client sensor pipeline processes accelerometer readings through a **dual-condition filter**:
 1. **Impact Threshold:** Acceleration exceeds $2.5\text{ g}$.
 2. **Stillness Verification:** Sustained low mobility ($< 0.3\text{ g}$ variance) for $1000\text{ ms}$ post-impact (eliminating false positives from road potholes or phone drops).
@@ -139,10 +147,14 @@ The client sensor pipeline processes accelerometer readings through a **dual-con
 
 The engine performs a multi-ring ripple search to find available ambulances:
 1. **Ring 1:** $500\text{ m}$ radius.
-2. **Ring 2:** $1000\text{ m}$ radius ($+5\text{ s}$).
-3. **Ring 3:** $2000\text{ m}$ radius ($+5\text{ s}$).
-4. **Ring 4:** $4000\text{ m}$ radius ($+5\text{ s}$).
-5. **Ring 5:** $8000\text{ m}$ radius ($+5\text{ s}$).
+2. **Ring 2:** $1000\text{ m}$ radius.
+3. **Ring 3:** $2000\text{ m}$ radius.
+4. **Ring 4:** $4000\text{ m}$ radius.
+5. **Ring 5:** $8000\text{ m}$ radius.
+
+- **Demo Speed Control:** Click the **`10x`** button in the dashboard header to accelerate ring expansion from 120s down to 12s per ring.
+- **On-Demand Expansion:** Call `POST /missions/:id/expand` to immediately trigger the next ring without waiting.
+- **Immediate Triage:** Call `POST /missions/:id/quick-assign` to assign the nearest available ambulance immediately across any distance.
 
 In our synthetic benchmark with 10,000 ambulances, query resolution executes in **$p99 < 10\ \mu\text{s}$**, far surpassing the 200 ms hackathon target.
 
@@ -152,6 +164,7 @@ In our synthetic benchmark with 10,000 ambulances, query resolution executes in 
 
 When candidate ambulances are identified, dispatch offers are broadcast via WebSocket.
 
+- **Simulated Driver Auto-Acceptance (Demo Mode):** In prototype demonstrations without physical driver phone hardware, the nearest candidate automatically confirms acceptance after a realistic 1.5s simulated reaction delay (`acceptMission`).
 - **Race Condition Protection:** When multiple drivers tap "Accept" simultaneously, the server enforces a synchronous atomic lock in the Node event loop.
 - **First-Accept Wins:** The first driver transitions the mission to `ASSIGNED`.
 - **Conflict Handling:** Subsequent drivers receive an immediate `HTTP 409 Conflict`, preventing duplicate dispatch errors.

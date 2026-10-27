@@ -130,3 +130,11 @@ Where historical documents and the current specification conflict, **THIS SPEC W
 - **Decision:** Standalone Control Dashboard is served directly by Express at `http://localhost:3000/control`.
 - **Capabilities:** Real-time mission tracking, ambulance fleet monitor, Green Corridor advisory alerts, SHA-256 chain verification, demo tamper button, and world reset.
 
+### Q11: Simulated Driver Auto-Acceptance & Fast Ring Expansion
+- **Decision:** During local judge demonstrations, physical driver devices are often unavailable to tap "Accept" on incoming WebSocket offers.
+- **Resolution:**
+  1. **Simulated Driver Auto-Acceptance:** When candidate ambulances are found in an active search ring, the nearest available driver simulator automatically confirms via `acceptMission` after a 1.5s scaled reaction delay.
+  2. **Fast Ring Expansion API (`POST /missions/:id/expand`):** Allows immediate ring expansion ($500\text{ m} \to 1\text{ km} \to 2\text{ km} \dots$) without waiting for timeout.
+  3. **Instant Quick-Assign API (`POST /missions/:id/quick-assign`):** Instantly assigns the nearest available ambulance across any distance.
+  4. **Dedicated Citizen SOS Testing Portal (`http://localhost:3000/sos`):** Web interface pre-configured with Navrangpura (Ring 1 instant assignment <500m), Sabarmati, and Ashram Road hotspots.
+

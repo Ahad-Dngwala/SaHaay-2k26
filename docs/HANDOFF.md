@@ -47,6 +47,13 @@ See [docs/STATUS.md](STATUS.md) for full gap analysis and [docs/progress.md](pro
   - `.env` untracked and gitignored; clean `.env.example` committed.
   - License unified to `FSL-1.1-ALv2` across `LICENSE.md`, `README.md`, `package.json`, and `server/package.json`.
   - All local `file:///` URLs converted to relative links.
+  - Added `.agent/` and `.github/` to `.gitignore`.
+- [x] **M9: Dispatch Real-Time Assignment & Citizen SOS Interface**:
+  - Simulated driver auto-acceptance: candidate ambulances automatically accept within 1.5s in demo mode.
+  - Instant ring expansion endpoint `POST /missions/:id/expand`.
+  - Instant nearest ambulance quick-assign endpoint `POST /missions/:id/quick-assign`.
+  - Interactive Citizen SOS web interface at `http://localhost:3000/sos` with pre-populated Ahmedabad localities (Navrangpura <500m, Sabarmati, etc.).
+  - Control dashboard UI improvements with color-coded mission status badges, offered ambulance tags, and live 1.5s refresh cycle.
 
 
 ---

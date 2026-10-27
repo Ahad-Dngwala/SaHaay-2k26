@@ -107,6 +107,7 @@ graph TD
   - **10,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ ($0.0033\text{ ms}$) at $500\text{ m}$.
   - *Full benchmark report: [docs/BENCHMARK.md](docs/BENCHMARK.md)*.
 - **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance (HTTP 200); any competing or late acceptances receive **HTTP 409 Conflict** and are cancelled.
+- **Simulated Driver Auto-Acceptance & Fast Ring Expansion**: When testing without physical driver devices, candidates automatically accept within 1.5s in demo mode. Instant ring expansion (`POST /missions/:id/expand`) and emergency quick-assignment (`POST /missions/:id/quick-assign`) allow immediate triage during demonstrations.
 
 ### 2. 🛡️ Self-Healing Failover (Breakdown Protection)
 - When a breakdown is reported for an active ambulance:
@@ -171,6 +172,7 @@ npm install
 npm run dev:server
 ```
 - **Control Dashboard:** [http://localhost:3000/control](http://localhost:3000/control)
+- **Citizen SOS Testing Portal:** [http://localhost:3000/sos](http://localhost:3000/sos)
 - **Health Endpoint:** [http://localhost:3000/health](http://localhost:3000/health)
 - **Fleet List:** [http://localhost:3000/ambulances](http://localhost:3000/ambulances)
 

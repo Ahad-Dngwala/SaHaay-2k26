@@ -71,3 +71,11 @@ In the interest of full technical transparency, this document records known cons
 - The ~200-entry Ahmedabad gazetteer (`assets/gazetteer.json`) encodes localities as 2-character Base36 IDs.
 - A locality centroid is an **address hint** to orient human dispatchers and drivers, not a verified street address.
 - The 1-metre Base36 coordinates in the SMS packet remain the primary location fix.
+
+---
+
+## 8. Driver Fleet Simulation in Demonstrations
+
+### Simulated Driver Auto-Acceptance
+- **Prototype Mode:** During local evaluations and hackathon judging where 25 real ambulance driver smartphones are not connected over WebSockets, candidate ambulances automatically accept the closest offer after a realistic 1.5s simulated reaction delay (`acceptMission`).
+- **Immediate Triage:** For live demonstrations, operators can also use `POST /missions/:id/quick-assign` or `POST /missions/:id/expand` to immediately bypass timer wait states.

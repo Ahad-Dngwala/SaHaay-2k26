@@ -118,6 +118,25 @@ This document provides a complete account of everything implemented up to the la
     8. Mission completed and SHA-256 audit chain verified valid
   - 8 tests in `server/src/e2e-journey.test.ts`.
 
+### 🚑 Milestone M9: Citizen SOS Testing Portal, Simulated Auto-Acceptance & Fast Ring Expansion
+- **Simulated Driver Auto-Acceptance (`server/src/dispatch.ts`)**:
+  - When candidates enter an active search ring and offers are broadcast (`OFFERS_SENT`), the nearest available ambulance simulator automatically accepts after a short realistic reaction delay (1.5 seconds scaled by `DEMO_TIME_SCALE`).
+  - Seamlessly transitions missions from `SEARCHING` $\to$ `DISPATCHING` $\to$ `ASSIGNED` without requiring a physical driver phone device during jury evaluations.
+- **Instant Search Expansion & Quick-Assign Endpoints (`server/src/routes.ts`)**:
+  - `POST /missions/:id/expand`: Instantly expands search to the next concentric ring on-demand without waiting for timeout.
+  - `POST /missions/:id/quick-assign`: Bypasses search ladder to immediately assign the nearest available ambulance across the entire grid.
+- **Dedicated Citizen SOS Testing Portal (`server/src/sos.html`)**:
+  - Served directly at `http://localhost:3000/sos`.
+  - Enables one-click testing with pre-populated Ahmedabad emergency hotspots:
+    - **Navrangpura** (`23.0330, 72.5607`): Instant Ring 1 assignment (<500m from AMB-01/02).
+    - **Sabarmati** (`23.0800, 72.5900`): Instant assignment to AMB-13.
+    - **Ashram Road Circle** (`23.0222, 72.5804`): Demonstrates concentric ring expansion ladder ($500\text{ m} \to 1\text{ km} \to 2\text{ km}$).
+  - Live WebSocket telemetry updates showing real-time driver details, vehicle plate, phone number, and ETA countdown.
+- **Enhanced Control Dashboard UI (`server/src/control.html`)**:
+  - High-visibility status badges (`SEARCHING` in blue, `ASSIGNED` in green, `ENROUTE` in amber).
+  - Explicit candidate driver offer visualization (`Offered: AMB-01, AMB-02`).
+  - Accelerated refresh loop (1.5s interval) synchronized with WebSocket telemetry events.
+
 ---
 
 ## 3. Detailed Repository Layout & Contents
@@ -221,6 +240,7 @@ Every component is validated continuously using strict TypeScript typechecking a
 | **M6** | Self-Healing Failover & Dashboard | Breakdown re-dispatch, green corridor alerts, `/control` dashboard, tamper tool | ✅ **DONE** |
 | **M7** | Demo Director & E2E Flow | Dynamic time scale controls, timer rescheduling, golden path journey test | ✅ **DONE** |
 | **M8** | Verification & Final Docs | `STATUS.md`, `BENCHMARK.md`, `progress.md`, `CLAIMS_MATRIX.md`, `ARCHITECTURE.md`, `TEST_CASES.md`, `LIMITATIONS.md`, `AI_DISCLOSURE.md`, `scripts/emu.sh` | ✅ **DONE** |
+| **M9** | Citizen SOS UI & Fast Expansion | `server/src/sos.html`, simulated auto-acceptance, `/missions/:id/expand`, `/missions/:id/quick-assign` | ✅ **DONE** |
 
 ---
 
@@ -239,9 +259,10 @@ npm install
 npm run dev:server
 ```
 
-### 2. View Mission Control & Authority Dashboard
+### 2. View Mission Control, SOS Portal & Authority Dashboard
 Open your browser to:
 - **Control Dashboard:** `http://localhost:3000/control`
+- **Citizen SOS Testing Portal:** `http://localhost:3000/sos`
 - **System Health:** `http://localhost:3000/health`
 - **Fleet List:** `http://localhost:3000/ambulances`
 
