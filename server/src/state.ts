@@ -6,12 +6,18 @@
 
 import { Ambulance, Mission, AuditEntry } from './types';
 
+export interface ActiveTimer {
+  timer: NodeJS.Timeout;
+  startedAt: number;
+  nominalDurationS: number;
+}
+
 export const state = {
   ambulances: new Map<string, Ambulance>(),
   missions:   new Map<string, Mission>(),
   audit:      [] as AuditEntry[],
-  /** Active expansion timers: missionId → NodeJS.Timeout */
-  expansionTimers: new Map<string, NodeJS.Timeout>(),
+  /** Active expansion timers: missionId → ActiveTimer */
+  expansionTimers: new Map<string, ActiveTimer>(),
   /** DEMO_TIME_SCALE: set via API or Demo Director; default 1 */
   demoTimeScale: 1,
 };
@@ -19,8 +25,8 @@ export const state = {
 /** Reset all state (for Demo Director "Reset world") */
 export function resetState(): void {
   // Cancel all expansion timers
-  for (const timer of state.expansionTimers.values()) {
-    clearTimeout(timer);
+  for (const item of state.expansionTimers.values()) {
+    clearTimeout(item.timer);
   }
   state.ambulances.clear();
   state.missions.clear();

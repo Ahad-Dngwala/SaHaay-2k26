@@ -54,7 +54,12 @@
 <header>
   <h1>🚑 SaHaay — Control &amp; Traffic Authority Dashboard</h1>
   <span class="status"><span class="conn-dot" id="conn-dot"></span><span id="conn-status">Connecting…</span></span>
-  <div style="margin-left:auto;display:flex;gap:8px;">
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:4px;background:#1e293b;padding:3px 8px;border-radius:6px;">
+      <span style="font-size:11px;color:var(--muted);">Time:</span>
+      <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;" onclick="setTimeScale(1)">1x</button>
+      <button class="btn btn-primary" style="padding:2px 6px;font-size:11px;" onclick="setTimeScale(10)">10x</button>
+    </div>
     <button class="btn btn-danger" onclick="tamper()">⚠ Tamper Entry (Demo)</button>
     <button class="btn btn-ghost" onclick="verify()">🔐 Verify Chain</button>
     <button class="btn btn-primary" onclick="reset()">♻ Reset World</button>
@@ -76,7 +81,8 @@
     </table>
   </div>
   <div class="card">
-    <h2>🚦 Green Corridor Alerts</h2>
+    <h2>🚦 Green Corridor — Advisory Pre-Clearance Alerts</h2>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:8px;">⚠️ Simulated pre-clearance advisory notifications for traffic authority rooms (no direct signal actuation).</p>
     <div id="corridor-alerts"><em style="color:var(--muted)">No active alerts.</em></div>
   </div>
   <div class="card">
@@ -189,6 +195,15 @@
     await fetch(`${API}/audit/tamper`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ index: 0 }) });
     refresh();
     alert('Entry 0 tampered. Click "Verify Chain" to see the failure.');
+  }
+
+  async function setTimeScale(scale) {
+    await fetch(`${API}/demo/time-scale`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scale }),
+    });
+    alert(`Demo time scale set to ${scale}x (all expansion timers dynamically rescaled)`);
   }
 
   async function reset() {

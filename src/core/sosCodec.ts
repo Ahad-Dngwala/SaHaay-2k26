@@ -77,8 +77,25 @@ export type EncodeResult = { ok: true; token: string; length: number };
 export type DecodeResult = { ok: true; data: SosToken };
 export type DecodeError   = { ok: false; reason: string };
 
-/** Encode a SOS into a compact ASCII token. Throws if result exceeds 160 chars. */
+/**
+ * Encode a SOS into a compact ASCII token.
+ * Validates coordinate bounds [-90, 90] and [-180, 180] before encoding.
+ * NOTE: addrId locality centroid is an address hint only; lat/lon remain the primary location.
+ */
 export function encode(p: Omit<SosToken, 'version'>): EncodeResult {
+  if (typeof p.lat !== 'number' || isNaN(p.lat) || p.lat < -90 || p.lat > 90) {
+    throw new RangeError(`encode: latitude must be between -90 and 90, got ${p.lat}`);
+  }
+  if (typeof p.lon !== 'number' || isNaN(p.lon) || p.lon < -180 || p.lon > 180) {
+    throw new RangeError(`encode: longitude must be between -180 and 180, got ${p.lon}`);
+  }
+  if (typeof p.ts !== 'number' || isNaN(p.ts) || p.ts < 0) {
+    throw new RangeError(`encode: timestamp must be non-negative integer, got ${p.ts}`);
+  }
+  if (p.addrId !== undefined && (p.addrId < -1 || p.addrId > 1295)) {
+    throw new RangeError(`encode: addrId out of gazetteer range (max 1295 for 2-char base36), got ${p.addrId}`);
+  }
+
   const lat36    = toBase36(Math.round((p.lat  +  90) * 1e5));
   const lon36    = toBase36(Math.round((p.lon  + 180) * 1e5));
   const ts36     = toBase36(p.ts);

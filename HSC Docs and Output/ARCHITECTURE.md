@@ -1,14 +1,14 @@
-# SaHaay — System Architecture & Specification
+# SaHaay — System Architecture & Technical Specification
 
 ## 1. High-Level System Architecture
 
-SaHaay operates as an autonomous, offline-first emergency coordination layer. It decouples the dispatch decision loop from human operators while maintaining continuous communication over hybrid WebSockets and GSM/SMS channels.
+SaHaay operates as an autonomous, offline-first emergency coordination layer. It decouples the dispatch decision loop from human call centres while maintaining continuous communication over hybrid WebSockets and GSM/SMS channels.
 
 ```mermaid
 graph TB
     subgraph "Edge Tier (Citizen / IoT)"
         Sensor[Accelerometer Sensor] --> Detector[CrashDetector (Stillness Filter)]
-        Detector --> Countdown[30s Safety Countdown]
+        Detector --> Countdown[30s Safety Countdown Timer]
         Countdown --> SOS[SOS Trigger]
         Manual[Manual SOS Button] --> SOS
         SOS --> TransportMgr[TransportManager State Machine]
@@ -26,14 +26,14 @@ graph TB
         SMSInbound --> MissionCtrl
         
         MissionCtrl --> Grid[In-Memory Spatial Binning Grid]
-        Grid --> Ripple[Ripple Search Engine: 500m -> 8km]
+        Grid --> Ripple[Ripple Search Ladder: 500m -> 8km]
         Ripple --> Offers[Driver Offer Dispatch]
         
         Offers --> Lock["Synchronous First-Accept Lock (Atomic)"]
         Lock --> ActiveMission[Active Mission Lifecycle]
         
         ActiveMission --> DeadReckoning[Dead-Reckoning Marker Engine]
-        ActiveMission --> GreenCorridor[Green Corridor Pre-Clearance Alert]
+        ActiveMission --> GreenCorridor[Green Corridor Advisory Alert]
         ActiveMission --> Breakdown[Breakdown Anomaly Handler]
         
         Breakdown -- Redispatch to Live GPS --> Ripple
@@ -62,7 +62,7 @@ sequenceDiagram
     participant Authority as Traffic Control Room
 
     Note over Patient, Client: Vehicular impact detected (>= 2.5g)
-    Patient->>Client: Post-impact stillness verified
+    Patient->>Client: Post-impact stillness verified (1000ms)
     Client->>Patient: 30s Countdown Modal (Haptics + Audio)
     Note over Patient: User does not cancel
     
@@ -78,16 +78,17 @@ sequenceDiagram
     Server->>Fleet: Spatial Query (500m ring) -> Broadcast Offers
     
     par Candidate Response
-        Fleet->>Server: Driver 1 accepts
+        Fleet->>Server: Driver 1 accepts (Winner)
     and Competing Response
-        Fleet->>Server: Driver 2 accepts (late)
+        Fleet->>Server: Driver 2 accepts (Late)
     end
 
     Server->>Server: Atomic First-Accept Lock (Driver 1 wins)
-    Server-->>Fleet: Cancel offer to Driver 2
+    Server-->>Fleet: Driver 1 receives HTTP 200 { won: true }
+    Server-->>Fleet: Driver 2 receives HTTP 409 Conflict { won: false }
     Server-->>Client: MISSION_ASSIGNED (Driver 1 details, vehicle plate)
     
-    Server->>Authority: GREEN_CORRIDOR_UPDATE (Junction ETAs)
+    Server->>Authority: GREEN_CORRIDOR_UPDATE (Advisory Junction ETAs)
     Server->>Client: Live telemetry stream (20s pings + Dead-Reckoning)
 ```
 
@@ -124,10 +125,10 @@ sequenceDiagram
     participant Server as Dispatch Server
     participant Fleet as Fleet Spatial Index
 
-    Note over Stranded: Mechanical breakdown or traffic stall
+    Note over Stranded: Mechanical breakdown reported
     Stranded->>Server: POST /missions/:id/breakdown { ambulanceId }
     Server->>Server: Mark Stranded status = 'BREAKDOWN'
-    Server->>Server: Log stranded coordinates for crew recovery
+    Server->>Server: Log stranded coordinates for crew recovery in SHA-256 ledger
     
     Server->>Patient: Alert: Breakdown occurred; replacement on route
     
@@ -143,7 +144,7 @@ sequenceDiagram
 ## 5. Offline Mapping & Vector Tile Strategy
 
 ### Prototype Implementation (Bundled GeoJSON + Turf.js)
-1. **Zero-Dependency Bundle:** Bundled `assets/ahmedabad-roads.geojson` (<1.5 MB) provides the arterial road network for Ahmedabad.
+1. **Zero-Dependency Bundle:** Bundled `assets/ahmedabad-roads.geojson` (<1.5 MB) provides the arterial road network for Ahmedabad, explicitly marked `synthetic: true`.
 2. **Dead-Reckoning Projection:** Between low-frequency GPS/SMS updates ($20\text{s}$ interval), the `DeadReckoningTracker` advances the ambulance icon along road coordinates (`@turf/along`) or project heading (`@turf/destination`).
 3. **Smooth Exponential Filtering:** A smoothing filter ($\tau = 0.7\text{s}$) prevents visual snaps when fresh fixes arrive.
 

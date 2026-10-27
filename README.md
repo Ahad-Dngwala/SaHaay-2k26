@@ -4,8 +4,8 @@
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-39%20Passing-brightgreen?style=for-the-badge)
-![Bench](https://img.shields.io/badge/Matching-0.012ms-purple?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-58%20Passing-brightgreen?style=for-the-badge)
+![Bench](https://img.shields.io/badge/Matching-0.003ms-purple?style=for-the-badge)
 
 > **"No patient left waiting."**
 >
@@ -19,9 +19,9 @@ In the Golden Hour, certainty saves lives. Yet, India's current emergency infras
 
 | Current System (108/112) ❌ | SaHaay Autonomous Grid ✅ |
 | :--- | :--- |
-| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 < 0.02\text{ ms}$) |
+| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 = 3.3\ \mu\text{s}$ search latency) |
 | **Blind Waiting** (No Tracking) | **Live Tracking with Dead-Reckoning** |
-| **Single Point of Failure** | **Self-Healing Failover** (Auto-Redispatch to Live GPS) |
+| **Single Point of Failure** | **Self-Healing Failover** (Auto-Redispatch to Patient Live GPS) |
 | **Network Dependent** | **Offline SMS-First Mechanism** ($\le 45$ char Base36 packets) |
 | **Opaque Operations** | **Cryptographic SHA-256 Audit Trail** |
 
@@ -55,12 +55,12 @@ graph TD
     subgraph "Live Operations"
         Routing[⚡ Route Calculation & Dead-Reckoning]
         Track[📡 Telemetry & Socket Stream]
-        Traffic[🚦 Green Corridor Pre-Clearance]
-        Breakdown{Breakdown / Stall?}
+        Traffic[🚦 Green Corridor Advisory Notifications]
+        Breakdown{Breakdown Reported?}
     end
 
     subgraph "Self-Healing Failover"
-        Transfer[🔄 Auto-Transfer to Patient Live GPS]
+        Transfer[🔄 Re-dispatch to Patient Live GPS]
     end
 
     Hospital([🏥 Hospital Admission])
@@ -97,41 +97,44 @@ graph TD
 
 ## 🔥 Key Capabilities
 
-### 1. ⚡ High-Performance Dispatch Engine ($< 0.02\text{ ms}$)
+### 1. ⚡ High-Performance Dispatch Engine ($< 0.01\text{ ms}$ search latency)
 - **In-Memory Spatial Grid Index**: Uses fixed $0.01^\circ$ (~1.11 km) spatial cell hashing to index thousands of ambulances.
 - **Empirically Measured Benchmark**: Measured with `npm run bench` (1,000 iterations per radius):
-  - **1,000 ambulances**: $p50 = 2.9\ \mu\text{s}$, $p99 = 5.9\ \mu\text{s}$ at $500\text{ m}$.
-  - **10,000 ambulances**: $p50 = 4.2\ \mu\text{s}$, $p99 = 12.0\ \mu\text{s}$ ($0.012\text{ ms}$) at $500\text{ m}$.
+  - **1,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ at $500\text{ m}$.
+  - **10,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ ($0.0033\text{ ms}$) at $500\text{ m}$.
   - *Full benchmark report: [docs/BENCHMARK.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/BENCHMARK.md)*.
-- **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance; competing offers are immediately cancelled.
+- **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance (HTTP 200); any competing or late acceptances receive **HTTP 409 Conflict** and are cancelled.
 
 ### 2. 🛡️ Self-Healing Failover (Breakdown Protection)
-- If an active ambulance stalls, breaks down, or reports vehicle failure:
-  - The vehicle is marked as `BREAKDOWN` and its location logged for recovery.
+- When a breakdown is reported for an active ambulance:
+  - The vehicle is transitioned to `BREAKDOWN` and its stranded coordinates are logged in the SHA-256 audit ledger for crew recovery.
   - The dispatch system **automatically restarts search from the patient's LIVE GPS coordinates** (not the stranded vehicle's location).
-  - No human intervention required.
+  - No human call-centre intervention required.
 
 ### 3. 📡 Disaster-Ready Offline Mode (DIL)
 - **Ultra-Compact Base36 SMS Protocol**:
   - Format: `S1|<uid36>|<lat36>|<lon36>|<ts36>|<addrId36>|<flags36>|<crc8>`
-  - Encodes 1-metre GPS precision in **under 45 characters** (safe within 160-char SMS limit).
+  - Encodes 1-metre GPS precision in **under 45 characters** (safe within 160-char GSM-7 limit).
+  - Strict boundary checking on encoding (latitude $[-90, 90]$, longitude $[-180, 180]$).
   - Includes a 2-char Base36 address hint from a bundled 200-locality Ahmedabad gazetteer (`assets/gazetteer.json`).
   - Protected with a polynomial CRC-8 checksum (`0x07`).
 - **Deterministic 4-State Transport Machine**: `ONLINE` $\to$ `DEGRADED` $\to$ `OFFLINE_SMS` $\to$ `RECOVERED` with an asynchronous outbox queue and exponential backoff.
 
-### 4. 💥 Intelligent Crash Detection with Stillness Filter
+### 4. 💥 Intelligent Crash Detection & Countdown Safety
 - Continuously polls accelerometer ($20\text{ ms}$ interval, $50\text{ Hz}$).
 - Requires $\ge 2.5\text{ g}$ sustained impact for $\ge 100\text{ ms}$, followed by a $1000\text{ ms}$ post-impact stillness filter ($\Delta g < 0.3\text{ g}$).
 - Prevents false triggers from potholes, sharp braking, and phone drops.
+- **30-Second Safety Countdown**: Defaults to 30 seconds (`COUNTDOWN_SEC = 30`), configurable 5–30s. Cancellation guarantees zero SOS emissions; countdown completion triggers exactly one SOS.
 
 ### 5. 🔐 Tamper-Evident SHA-256 Audit Chain
 - Cryptographic hash chain: each log entry hashes the previous hash, timestamp, event, and data payload.
 - Real-time verification via `GET /audit/verify`.
 - Includes a live tamper demonstration API (`POST /audit/tamper`) to prove mathematical integrity to judges.
 
-### 6. 🚦 Green Corridor Pre-Clearance
-- Alerts traffic control rooms about approaching emergency vehicles at major junctions.
-- Live authority dashboard served at `http://localhost:3000/control`.
+### 6. 🚦 Green Corridor Coordination (Advisory)
+- Broadcasts structured advisory pre-clearance notifications about approaching emergency vehicles at major junctions.
+- Displayed on the live authority dashboard served at `http://localhost:3000/control`.
+- Explicitly labelled: *Advisory notification (simulated pre-clearance; no physical signal actuation)*.
 
 ---
 
@@ -172,7 +175,7 @@ npm run dev:server
 ```bash
 npm test
 ```
-*Validates 39 unit tests covering codec, crash detection waveforms, and transport state reducer.*
+*Validates 58 automated tests across 7 test suites covering codec, crash detection waveforms, countdown safety, transport state reducer, dead-reckoning tracker, concurrent first-acceptance race, and the complete 8-stage golden path user journey.*
 
 ### 4. Run the Spatial Matching Benchmark
 ```bash
@@ -185,17 +188,20 @@ npm run bench
 ## 🏆 Project Status
 
 - [x] **Single Source of Truth (`src/core/config.ts`)**
-- [x] **Compact Base36 SMS Codec with CRC8 (`src/core/sosCodec.ts`)**
+- [x] **Compact Base36 SMS Codec with CRC8 & Bounds Checking (`src/core/sosCodec.ts`)**
 - [x] **In-Memory Spatial Index Matching (`server/src/matching.ts`)**
-- [x] **Synchronous First-Accept Lock (`server/src/dispatch.ts`)**
+- [x] **Synchronous First-Accept Lock with HTTP 409 Conflict (`server/src/dispatch.ts`)**
 - [x] **Dynamic Ripple Search Ladder (500m $\to$ 8km)**
-- [x] **Empirical Benchmark Suite (`docs/BENCHMARK.md`: $0.012\text{ ms}$)**
+- [x] **Empirical Benchmark Suite (`docs/BENCHMARK.md`: $0.003\text{ ms}$ search latency)**
 - [x] **Vehicular Crash Detector with Stillness Filter (`src/core/crash/CrashDetector.ts`)**
+- [x] **30-Second Countdown Timer with Cancel & Exactly-Once SOS (`src/core/crash/CountdownTimer.ts`)**
 - [x] **Deterministic Transport State Machine (`src/core/transport/TransportManager.ts`)**
 - [x] **Cryptographic Tamper-Evident Audit Chain (`server/src/audit.ts`)**
-- [x] **Self-Healing Failover to Live Patient GPS**
+- [x] **Self-Healing Failover to Live Patient GPS with Breakdown Coordinates Preserved**
 - [x] **Traffic Authority Control Dashboard (`http://localhost:3000/control`)**
-- [x] **39 / 39 Automated Unit Tests Passing**
+- [x] **Demo Director Dynamic Time Scaling with Active Timer Rescheduling**
+- [x] **58 / 58 Automated Tests Passing across 7 Test Suites**
+- [x] **Zero TypeScript Errors (`npx tsc --noEmit`)**
 
 ---
 

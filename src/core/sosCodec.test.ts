@@ -130,6 +130,39 @@ describe('sosCodec: decode', () => {
       expect(r1.data).toEqual(r2.data);
     }
   });
+  test('out-of-bounds coordinates throw RangeError on encode', () => {
+    expect(() => encode({ uid: 'badlat', lat: 91, lon: 72, ts: 1700000000, addrId: 0, flags: 0 })).toThrow(RangeError);
+    expect(() => encode({ uid: 'badlat', lat: -95, lon: 72, ts: 1700000000, addrId: 0, flags: 0 })).toThrow(RangeError);
+    expect(() => encode({ uid: 'badlon', lat: 23, lon: 185, ts: 1700000000, addrId: 0, flags: 0 })).toThrow(RangeError);
+    expect(() => encode({ uid: 'badlon', lat: 23, lon: -190, ts: 1700000000, addrId: 0, flags: 0 })).toThrow(RangeError);
+  });
+
+  test('oversized token exceeding 160 chars is rejected by decode', () => {
+    const longGarbage = 'S1|' + 'a'.repeat(165) + '|00';
+    const result = decode(longGarbage);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toContain('160 chars');
+  });
+
+  test('validates assets/gazetteer.json structure and 2-char base36 ID bound', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const gazetteer = require('../../assets/gazetteer.json');
+    expect(Array.isArray(gazetteer)).toBe(true);
+    expect(gazetteer.length).toBeGreaterThan(150);
+    expect(gazetteer.length).toBeLessThanOrEqual(1296); // Must fit in 2 base36 chars (36^2)
+
+    for (const entry of gazetteer) {
+      expect(entry).toHaveProperty('id');
+      expect(entry).toHaveProperty('name');
+      expect(entry).toHaveProperty('lat');
+      expect(entry).toHaveProperty('lon');
+      expect(entry.id).toBeLessThan(1296);
+      expect(entry.lat).toBeGreaterThan(20);
+      expect(entry.lat).toBeLessThan(25);
+      expect(entry.lon).toBeGreaterThan(68);
+      expect(entry.lon).toBeLessThan(76);
+    }
+  });
 });
 
 describe('sosCodec: generateUid', () => {

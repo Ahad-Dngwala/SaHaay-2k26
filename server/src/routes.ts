@@ -12,6 +12,7 @@ import {
   reportBreakdown,
   updateMissionStatus,
   updatePatientLocation,
+  setDemoTimeScale,
 } from './dispatch';
 import { auditLog, verifyChain, tamperEntry } from './audit';
 import { seedAmbulances } from './seed';
@@ -118,8 +119,21 @@ export function createRouter(): Router {
 
   router.post('/missions/:id/accept', (req: Request, res: Response) => {
     const { ambulanceId } = req.body as { ambulanceId: string };
+    if (!ambulanceId) {
+      res.status(400).json({ error: 'ambulanceId required', won: false });
+      return;
+    }
     const result = acceptMission(req.params.id, ambulanceId);
-    res.json(result);
+    if (!result.won) {
+      res.status(409).json({
+        error: 'Offer expired or mission already assigned to another unit',
+        won: false,
+        missionId: req.params.id,
+        ambulanceId,
+      });
+      return;
+    }
+    res.status(200).json(result);
   });
 
   router.post('/missions/:id/decline', (req: Request, res: Response) => {
@@ -214,7 +228,7 @@ export function createRouter(): Router {
   router.post('/demo/time-scale', (req: Request, res: Response) => {
     const { scale } = req.body as { scale: number };
     if (typeof scale !== 'number' || scale < 1) { res.status(400).json({ error: 'scale must be >= 1' }); return; }
-    state.demoTimeScale = scale;
+    setDemoTimeScale(scale);
     res.json({ ok: true, demoTimeScale: scale });
   });
 

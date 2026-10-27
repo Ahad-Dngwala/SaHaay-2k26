@@ -23,6 +23,6 @@ In developing the SaHaay emergency dispatch prototype, Generative AI tools (incl
 
 ## 2. Integrity Verification
 
-- **No Silent AI Code:** Every generated function has been inspected, reviewed, and covered by automated test suites (`npm test`).
+- **No Silent AI Code:** Every generated function has been inspected, reviewed, and covered by automated test suites (`npm test` — 58 passed / 58 total).
 - **No Hallucinated Benchmarks:** All performance metrics reported in `docs/BENCHMARK.md` were measured empirically on real hardware via `npm run bench`.
 - **Honest Simulation Labelling:** Components that cannot execute in Expo Go (such as silent background telephony and native C++ offline tiles) are explicitly labelled as `SIMULATED` in code and UI, with their production architecture documented.

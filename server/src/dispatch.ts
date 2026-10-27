@@ -67,7 +67,7 @@ export function createMission(params: CreateMissionParams): Mission {
   // Kick off first search ring
   _searchRing(id);
 
-  return mission;
+  return state.missions.get(id) ?? mission;
 }
 
 // ── Search Ring ───────────────────────────────────────────────────────────────
@@ -128,15 +128,22 @@ function _searchRing(missionId: string): void {
 function _scheduleExpansion(missionId: string): void {
   // Cancel any existing timer
   const existing = state.expansionTimers.get(missionId);
-  if (existing) clearTimeout(existing);
+  if (existing) clearTimeout(existing.timer);
 
-  const delay = scaledMs(Config.EXPAND_AFTER_S);
+  const nominalDurationS = Config.EXPAND_AFTER_S;
+  const delay = scaledMs(nominalDurationS);
+  const startedAt = Date.now();
+
   const timer = setTimeout(() => {
     state.expansionTimers.delete(missionId);
     _tryExpand(missionId);
   }, delay);
 
-  state.expansionTimers.set(missionId, timer);
+  state.expansionTimers.set(missionId, {
+    timer,
+    startedAt,
+    nominalDurationS,
+  });
 }
 
 function _tryExpand(missionId: string): void {
@@ -209,8 +216,8 @@ export function acceptMission(missionId: string, ambulanceId: string): AcceptRes
   }
 
   // Cancel expansion timer (mission is now locked)
-  const timer = state.expansionTimers.get(missionId);
-  if (timer) { clearTimeout(timer); state.expansionTimers.delete(missionId); }
+  const timerItem = state.expansionTimers.get(missionId);
+  if (timerItem) { clearTimeout(timerItem.timer); state.expansionTimers.delete(missionId); }
 
   // Update ambulance status
   state.ambulances.set(ambulanceId, { ...ambu, status: 'ENROUTE' });
@@ -253,8 +260,8 @@ export function declineMission(missionId: string, ambulanceId: string): void {
 
   // If no more offers, re-expand immediately
   if (remaining.length === 0) {
-    const timer = state.expansionTimers.get(missionId);
-    if (timer) { clearTimeout(timer); state.expansionTimers.delete(missionId); }
+    const timerItem = state.expansionTimers.get(missionId);
+    if (timerItem) { clearTimeout(timerItem.timer); state.expansionTimers.delete(missionId); }
     _tryExpand(missionId);
   }
 }
@@ -378,7 +385,11 @@ function _generateGreenCorridor(missionId: string): void {
     }));
 
   updateMission(missionId, { routeCheckpoints: checkpoints });
-  auditLog('GREEN_CORRIDOR_COMPUTED', { missionId, checkpoints: checkpoints.map(c => c.name) });
+  auditLog('GREEN_CORRIDOR_COMPUTED', {
+    missionId,
+    checkpoints: checkpoints.map(c => c.name),
+    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (Simulated - No Direct Signal Actuation)',
+  });
 
   // Broadcast to authority/control clients
   broadcastToAll({
@@ -386,7 +397,44 @@ function _generateGreenCorridor(missionId: string): void {
     missionId,
     ambulanceId: ambu.id,
     checkpoints,
+    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (Simulated - No Direct Signal Actuation)',
   });
+}
+
+/**
+ * Rescales all active timers when Demo Director changes demoTimeScale.
+ * Solves Q8: existing timers are dynamically rescheduled according to the new scale.
+ */
+export function setDemoTimeScale(newScale: number): void {
+  if (newScale < 1) throw new Error('Scale must be >= 1');
+  const oldScale = state.demoTimeScale;
+  if (oldScale === newScale) return;
+
+  const nowMs = Date.now();
+  state.demoTimeScale = newScale;
+
+  for (const [missionId, item] of Array.from(state.expansionTimers.entries())) {
+    clearTimeout(item.timer);
+    // Calculate elapsed nominal seconds
+    const elapsedNominalS = ((nowMs - item.startedAt) / 1000) * oldScale;
+    const remainingNominalS = Math.max(0, item.nominalDurationS - elapsedNominalS);
+
+    if (remainingNominalS <= 0.1) {
+      state.expansionTimers.delete(missionId);
+      _tryExpand(missionId);
+    } else {
+      const delayMs = Math.round((remainingNominalS * 1000) / newScale);
+      const newTimer = setTimeout(() => {
+        state.expansionTimers.delete(missionId);
+        _tryExpand(missionId);
+      }, delayMs);
+      state.expansionTimers.set(missionId, {
+        timer: newTimer,
+        startedAt: nowMs,
+        nominalDurationS: remainingNominalS,
+      });
+    }
+  }
 }
 
 function haversineSimple(lat1: number, lon1: number, lat2: number, lon2: number): number {
