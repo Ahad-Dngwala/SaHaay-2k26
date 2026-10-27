@@ -11,6 +11,8 @@
 > **"No patient left waiting."**
 >
 > SaHaay transforms emergency response from a manual, opaque phone-system into a **real-time, data-driven, and fully autonomous rescue capability**.
+>
+> 📖 **Judges & Evaluators:** See [walkthrough.md](walkthrough.md) for the complete 8-stage interactive demonstration guide and scriptable scenario controls.
 
 ---
 
