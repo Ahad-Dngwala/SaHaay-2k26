@@ -60,6 +60,11 @@ const seenSosUids = new Set<string>();
 export function createRouter(): Router {
   const router = Router();
 
+  // ── Root & Index ─────────────────────────────────────────────────────────────
+  router.get('/', (_req: Request, res: Response) => {
+    res.redirect('/control');
+  });
+
   // ── Health ──────────────────────────────────────────────────────────────────
   router.get('/health', (_req: Request, res: Response) => {
     res.json({
@@ -162,6 +167,16 @@ export function createRouter(): Router {
   });
 
   // ── SMS Inbound (SimulatedCarrier / real Twilio webhook) ────────────────────
+  router.get('/sms/inbound', (_req: Request, res: Response) => {
+    res.json({
+      status: 'ok',
+      endpoint: '/sms/inbound',
+      supportedMethods: ['POST'],
+      description: 'SaHaay Simulated SMS Inbound Webhook. Send HTTP POST with { token } or form Body=<token>.',
+      example: { token: 'S1|9f3|0|ts5e587pk|230300|725800|37|1|f6' }
+    });
+  });
+
   router.post('/sms/inbound', (req: Request, res: Response) => {
     // Accepts both: JSON body { token } or form body (Twilio-style: Body=<token>)
     const token: string = (req.body.token ?? req.body.Body ?? '').trim();
