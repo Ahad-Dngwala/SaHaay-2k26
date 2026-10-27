@@ -1,12 +1,12 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment variables
-src/config/env.js
+.env
 .env.local
 .env.*.local
+src/config/env.js
 
 # Logs
 logs/
@@ -29,6 +29,7 @@ Thumbs.db
 # Build
 dist/
 build/
+server/dist/
 
 # Test coverage
 coverage/

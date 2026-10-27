@@ -1,6 +1,7 @@
 # SaHaay: India's First Autonomous Emergency Response Grid
 
 ![Status](https://img.shields.io/badge/Status-Operational-success?style=for-the-badge)
+[![CI](https://github.com/Ahad-Dngwala/SaHaay-2k26/actions/workflows/sahaay-ci.yml/badge.svg)](https://github.com/Ahad-Dngwala/SaHaay-2k26/actions/workflows/sahaay-ci.yml)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge)
@@ -171,17 +172,15 @@ npm run dev:server
 - **Health Endpoint:** [http://localhost:3000/health](http://localhost:3000/health)
 - **Fleet List:** [http://localhost:3000/ambulances](http://localhost:3000/ambulances)
 
-### 3. Run Automated Tests
+### 3. Run Quality, Build & Verification Commands
 ```bash
-npm test
+npm run typecheck    # Verifies TypeScript compiler across core and server (0 errors)
+npm run build:server # Builds production server to dist/ and copies static assets
+npm test             # Runs test suite locally (58 tests across 7 suites)
+npm run test:ci      # Deterministic CI runner (--runInBand; fails if 0 tests discovered)
+npm run test:smoke   # Cross-platform runtime smoke test (polls /health and /control on isolated port)
+npm run bench        # Spatial grid benchmark (<200ms assertion on 10k fleet)
 ```
-*Validates 58 automated tests across 7 test suites covering codec, crash detection waveforms, countdown safety, transport state reducer, dead-reckoning tracker, concurrent first-acceptance race, and the complete 8-stage golden path user journey.*
-
-### 4. Run the Spatial Matching Benchmark
-```bash
-npm run bench
-```
-*Measures and reports in-process spatial query latency on 1,000 and 10,000 ambulance grids.*
 
 ---
 
