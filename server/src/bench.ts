@@ -115,8 +115,10 @@ md += `The SaHaay grid search uses a fixed-size spatial cell index (0.01° ≈ 1
 md += `Query time is proportional to the number of cells intersected by the search radius bounding box, `;
 md += `not the total number of ambulances. As a result, performance scales well with fleet size.\n\n`;
 md += `**500 m radius (initial search ring)** at 10k ambulances: see table above.\n\n`;
-md += `For a fair comparison: the end-to-end SOS dispatch latency (HTTP request → search → WebSocket offer) `;
-md += `is dominated by network round-trip (typically 1–50 ms on LAN), not the search itself.\n`;
+md += `For a fair comparison: the end-to-end SOS dispatch latency (HTTP request → search → WebSocket offer) is dominated by network round-trip (typically 1–50 ms on LAN), not the search itself.\n\n`;
+md += `### Presentation Guidance\n`;
+md += `> **Recommended slide/pitch wording:**\n`;
+md += `> *"In a synthetic 10,000-ambulance benchmark, the 500 m in-memory spatial search reported sub-millisecond p99 latency. This excludes end-to-end network and dispatch latency."*\n`;
 
 const outPath = path.join(__dirname, '../../docs/BENCHMARK.md');
 fs.mkdirSync(path.dirname(outPath), { recursive: true });

@@ -10,9 +10,10 @@
     "test:ci": "jest --testPathPattern=\"src/core|server/src\" --runInBand",
     "test:smoke": "node scripts/smoke-test.js",
     "bench": "cd server && npx ts-node src/bench.ts",
-    "build:server": "cd server && npm run build",
+    "build:server": "npm --workspace=server run build",
     "typecheck": "npx tsc --noEmit --project tsconfig.json && cd server && npx tsc --noEmit"
   },
+  "license": "FSL-1.1-ALv2",
   "workspaces": [
     "server"
   ],

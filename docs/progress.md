@@ -150,8 +150,8 @@ SaHaay-2k26/
 │   │   ├── config-server.ts             # Server configuration wrapper
 │   │   ├── control.html                 # Web Control & Traffic Authority dashboard (:3000/control)
 │   │   ├── dispatch.ts                  # Mission lifecycle, ripple ladder, breakdown failover
-│   │   ├── dispatch.test.ts             # Concurrency, 409 conflict, breakdown, and timer tests
-│   │   ├── e2e-journey.test.ts          # Complete 8-stage golden path user journey test
+│   │   ├── dispatch.test.ts             # Concurrency, 409 conflict, breakdown, and timer tests (4 tests)
+│   │   ├── e2e-journey.test.ts          # Complete 8-stage golden path user journey test (1 test)
 │   │   ├── index.ts                     # Express + WebSocket HTTP server entrypoint
 │   │   ├── matching.ts                  # Spatial cell grid index (0.01 deg cells) & Haversine
 │   │   ├── routes.ts                    # REST API (/health, /missions, /sms/inbound, /audit)
@@ -166,20 +166,20 @@ SaHaay-2k26/
 │       ├── config.ts                    # Single source of truth for all project tunables
 │       ├── crash/
 │       │   ├── CountdownTimer.ts        # 30s countdown timer with cancel & exactly-once SOS
-│       │   ├── CountdownTimer.test.ts   # Countdown unit tests (6 tests)
+│       │   ├── CountdownTimer.test.ts   # Countdown unit tests (5 tests)
 │       │   ├── CrashDetector.ts         # Accelerometer magnitude + stillness filter
-│       │   ├── CrashDetector.test.ts    # Waveform test suite (8 tests)
+│       │   ├── CrashDetector.test.ts    # Waveform test suite (9 tests)
 │       │   └── CrashSimulator.ts        # Synthetic sensor waveforms for web/emulator
 │       ├── sosCodec.ts                  # Base36 fixed-point SMS encoder/decoder with CRC8
-│       ├── sosCodec.test.ts             # Codec test suite (11 tests)
+│       ├── sosCodec.test.ts             # Codec test suite (23 tests)
 │       ├── tracking/
 │       │   ├── DeadReckoningTracker.ts  # Turf.js dead-reckoning marker projection
-│       │   └── DeadReckoningTracker.test.ts # Extrapolation & smoothing tests (8 tests)
+│       │   └── DeadReckoningTracker.test.ts # Extrapolation & smoothing tests (6 tests)
 │       └── transport/
 │           ├── HttpTransport.ts         # REST transport implementation
 │           ├── SmsTransport.ts          # GSM/SMS simulated transport implementation
 │           ├── TransportManager.ts      # 4-state network resilience state machine
-│           ├── TransportManager.test.ts # Reducer transition unit tests (9 tests)
+│           ├── TransportManager.test.ts # Reducer transition unit tests (10 tests)
 │           └── types.ts                 # Transport interfaces
 ├── AI_DISCLOSURE.md                     # Transparent AI contribution breakdown & compliance
 ├── ARCHITECTURE.md                      # System architecture, Mermaid diagrams, & mapping strategy
@@ -203,7 +203,7 @@ Every component is validated continuously using strict TypeScript typechecking a
 |---|---|---|---|
 | **Root Typecheck** | `npx tsc --noEmit` | ✅ PASS | **0 errors** |
 | **Server Typecheck** | `cd server && npx tsc --noEmit` | ✅ PASS | **0 errors** |
-| **Pure Logic Tests** | `npm test` | ✅ PASS | **58 / 58 tests passing** across 7 test suites: <br>• `CountdownTimer.test.ts` (6 tests)<br>• `TransportManager.test.ts` (9 tests)<br>• `CrashDetector.test.ts` (8 tests)<br>• `DeadReckoningTracker.test.ts` (8 tests)<br>• `sosCodec.test.ts` (11 tests)<br>• `dispatch.test.ts` (8 tests)<br>• `e2e-journey.test.ts` (8 tests) |
+| **Pure Logic Tests** | `npm test` | ✅ PASS | **58 / 58 tests passing** across 7 test suites: <br>• `sosCodec.test.ts` (23 tests)<br>• `TransportManager.test.ts` (10 tests)<br>• `CrashDetector.test.ts` (9 tests)<br>• `DeadReckoningTracker.test.ts` (6 tests)<br>• `CountdownTimer.test.ts` (5 tests)<br>• `dispatch.test.ts` (4 tests)<br>• `e2e-journey.test.ts` (1 test covering 8 golden-path stages) |
 | **Spatial Benchmarking** | `npm run bench` | ✅ PASS | **$3.3\ \mu\text{s}$ ($0.0033\text{ ms}$)** at 10k fleet ($< 200\text{ ms}$ claim verified) |
 | **Audit Verification** | `GET /audit/verify` | ✅ PASS | Valid SHA-256 chain verified end-to-end |
 

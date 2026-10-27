@@ -6,7 +6,7 @@
 
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery  
 Goal: Fully working local demo, zero cloud accounts, `npm i && npm run dev`.  
-See [docs/STATUS.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/STATUS.md) for full gap analysis and [docs/progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/progress.md) for complete codebase state.
+See [docs/STATUS.md](STATUS.md) for full gap analysis and [docs/progress.md](progress.md) for complete codebase state.
 
 ---
 
@@ -29,7 +29,7 @@ See [docs/STATUS.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/ST
 - [x] **M5: Road Geometry & Dead-Reckoning** — `assets/ahmedabad-roads.geojson` (clearly marked SYNTHETIC), `src/core/tracking/DeadReckoningTracker.ts` (Turf.js interpolation + exponential smoothing + test suite).
 - [x] **M6: Self-Healing Failover & Control Dashboard** — Breakdown re-dispatch to patient's live GPS, SHA-256 tamper-evident hash chain audit trail (`server/src/audit.ts` + `/audit/verify` + `/audit/tamper`), Green Corridor advisory junction notifications, standalone Control Dashboard at `:3000/control`.
 - [x] **M7: Demo Director & Scripted Control** — `/demo/reset`, `/demo/time-scale` ($10\times$ acceleration) in server with dynamic expansion timer rescheduling.
-- [x] **M8: Milestone Docs & Matrix** — `docs/CLAIMS_MATRIX.md`, `ARCHITECTURE.md`, `TEST_CASES.md`, `LIMITATIONS.md`, `AI_DISCLOSURE.md`, `scripts/emu.sh`, MIT `LICENSE.md`.
+- [x] **M8: Milestone Docs & Matrix** — `docs/CLAIMS_MATRIX.md`, `ARCHITECTURE.md`, `TEST_CASES.md`, `LIMITATIONS.md`, `AI_DISCLOSURE.md`, `scripts/emu.sh`, FSL-1.1-ALv2 `LICENSE.md`.
 - [x] **Correctness Gaps Fixed (Q1–Q10)**:
   - Default 30s countdown with cancel and exactly-once SOS (`CountdownTimer.test.ts`).
   - Concurrent first-acceptance test with HTTP 409 Conflict for losing drivers (`dispatch.test.ts`).
