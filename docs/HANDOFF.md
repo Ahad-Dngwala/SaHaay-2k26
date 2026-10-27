@@ -40,6 +40,14 @@ See [docs/STATUS.md](STATUS.md) for full gap analysis and [docs/progress.md](pro
 - [x] **All Automated Tests Verified**: **58 / 58 tests passing** across 7 test suites (`npm test`).
 - [x] **Full Typecheck Verified**: Zero TypeScript compiler errors in root and server (`npx tsc --noEmit`).
 - [x] **Benchmark Verified**: Spatial search p99 at 10k fleet = $3.3\ \mu\text{s} \ll 200\text{ ms}$ (`npm run bench`).
+- [x] **CI/CD & Hardening**:
+  - GitHub Actions CI pipeline (`.github/workflows/sahaay-ci.yml`) passing on `main`.
+  - `build:server` script updated to `npm --workspace=server run build`, generating server entrypoint.
+  - Automated smoke test (`scripts/smoke-test.js`) verifying `/health` and `/control`.
+  - `.env` untracked and gitignored; clean `.env.example` committed.
+  - License unified to `FSL-1.1-ALv2` across `LICENSE.md`, `README.md`, `package.json`, and `server/package.json`.
+  - All local `file:///` URLs converted to relative links.
+
 
 ---
 
