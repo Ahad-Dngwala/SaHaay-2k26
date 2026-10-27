@@ -1,0 +1,91 @@
+name: SaHaay CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build, Typecheck, Test & Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Validate Repository Hygiene
+        run: |
+          echo "🔍 Checking for sensitive files in git index..."
+          TRACKED_SENSITIVE=$(git ls-files .env "*.pem" "*.key" "id_rsa*" "*.pfx")
+          if [ -n "$TRACKED_SENSITIVE" ]; then
+            echo "::error::Sensitive files detected in git tracking: $TRACKED_SENSITIVE"
+            exit 1
+          fi
+          echo "✅ Repository hygiene check passed: zero secret files tracked."
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: Build Server
+        run: npm run build:server
+
+      - name: Automated Unit & Golden Path Tests (fails if 0 tests discovered)
+        run: npm run test:ci
+
+      - name: Runtime Smoke Test (Isolated Port /health & /control)
+        run: npm run test:smoke
+
+      - name: Spatial Matching Benchmark (<200ms threshold assertion)
+        run: npm run bench
+
+      - name: Upload Benchmark Report Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spatial-benchmark-report
+          path: docs/BENCHMARK.md
+          if-no-files-found: warn
+
+  security-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Run Production Dependency Audit
+        run: |
+          echo "🛡️ Running npm audit for production dependencies..."
+          # Audit production dependencies and report findings
+          npm audit --omit=dev || {
+            echo "::warning::Production dependency audit reported advisories. Check step logs for details."
+          }

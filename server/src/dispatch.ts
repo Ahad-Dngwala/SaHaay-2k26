@@ -138,6 +138,7 @@ function _scheduleExpansion(missionId: string): void {
     state.expansionTimers.delete(missionId);
     _tryExpand(missionId);
   }, delay);
+  if (timer.unref) timer.unref();
 
   state.expansionTimers.set(missionId, {
     timer,
@@ -428,6 +429,7 @@ export function setDemoTimeScale(newScale: number): void {
         state.expansionTimers.delete(missionId);
         _tryExpand(missionId);
       }, delayMs);
+      if (newTimer.unref) newTimer.unref();
       state.expansionTimers.set(missionId, {
         timer: newTimer,
         startedAt: nowMs,

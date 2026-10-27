@@ -55,7 +55,7 @@ export const Config = {
   DEMO_TIME_SCALE: 1,
 
   // ── Server ──────────────────────────────────────────────────────────────────
-  SERVER_PORT: 3000,
+  SERVER_PORT: typeof process !== 'undefined' && process?.env?.PORT ? Number(process.env.PORT) : 3000,
   EXPO_PORT: 8081,
 
   // ── SMS Codec ───────────────────────────────────────────────────────────────

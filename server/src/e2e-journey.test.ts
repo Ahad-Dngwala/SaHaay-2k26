@@ -39,6 +39,7 @@ describe('Complete E2E User Journey (Stages 1 to 8)', () => {
   });
 
   afterAll((done) => {
+    resetState();
     server.close(done);
   });
 

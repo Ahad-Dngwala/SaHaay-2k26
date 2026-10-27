@@ -4,17 +4,17 @@
   "private": true,
   "description": "SaHaay — offline-first emergency ambulance dispatch. Hack for Social Cause 2027.",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names \"server,expo\" -c \"cyan,magenta\" \"npm run dev:server\" \"npm run dev:expo\"",
+    "dev": "concurrently --kill-others-on-fail --names \"server\" -c \"cyan\" \"npm run dev:server\"",
     "dev:server": "cd server && npx ts-node-dev --respawn --transpile-only src/index.ts",
-    "dev:expo": "cd app && npx expo start --web",
     "test": "jest --testPathPattern=\"src/core|server/src\" --passWithNoTests",
+    "test:ci": "jest --testPathPattern=\"src/core|server/src\" --runInBand",
+    "test:smoke": "node scripts/smoke-test.js",
     "bench": "cd server && npx ts-node src/bench.ts",
-    "build:server": "cd server && npx tsc --noEmit",
-    "typecheck": "npx tsc --noEmit --project tsconfig.json && cd server && npx tsc --noEmit && cd ../app && npx tsc --noEmit"
+    "build:server": "cd server && npm run build",
+    "typecheck": "npx tsc --noEmit --project tsconfig.json && cd server && npx tsc --noEmit"
   },
   "workspaces": [
-    "server",
-    "app"
+    "server"
   ],
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -39,14 +39,17 @@
       "tsx",
       "js"
     ],
-    "globals": {
-      "ts-jest": {
-        "tsconfig": {
-          "strict": true,
-          "esModuleInterop": true,
-          "moduleResolution": "node"
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "strict": true,
+            "esModuleInterop": true,
+            "moduleResolution": "node"
+          }
         }
-      }
+      ]
     }
   },
   "dependencies": {
