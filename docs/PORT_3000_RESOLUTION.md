@@ -1,113 +1,93 @@
-# 🔧 Port 3000 Already in Use - Resolution
+# 🔧 Port 3000 Resolution Guide (SaHaay Dispatch Server)
 
 ## Problem
-```
+```text
 Error: listen EADDRINUSE: address already in use :::3000
 ```
 
 ## Cause
-- Backend server was previously running (from earlier test)
-- Node.js process didn't terminate
-- Trying to start another instance on same port
+- A previous instance of the SaHaay dispatch server (or another local process) is still bound to TCP port 3000.
+- Attempting to start another instance on the same port causes an `EADDRINUSE` conflict.
 
-## Solution Applied ✅
+---
 
-### Step 1: Kill Node Process
+## Safe Resolution (Targeted Process Termination)
+
+> [!CAUTION]
+> **Do NOT run indiscriminate commands like `Stop-Process -Name node` or `killall node`.**  
+> That terminates all Node processes on your machine, including IDE background tasks, build watchers, and other projects. Always identify the specific process holding port 3000.
+
+### Option A: Identify and Terminate Only the Port 3000 Process
+
+#### On Windows (PowerShell)
 ```powershell
-Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
-```
-Result: ✅ All Node processes terminated
+# 1. Identify which process is bound to port 3000
+$conn = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
+if ($conn) {
+    $proc = Get-Process -Id $conn.OwningProcess
+    Write-Host "Process on port 3000: $($proc.ProcessName) (PID: $($proc.Id))"
 
-### Step 2: Start Backend Fresh
-```bash
-cd backend
-node server.js
-```
-Output:
-```
-✅ WebSocket service initialized
-✅ MongoDB connected successfully
-🚑 Ambulance Dispatch Backend running on port 3000
-```
-
-### Step 3: Start Frontend
-```bash
-cd frontend
-npm run dev
-```
-Output:
-```
-VITE v5.4.21 ready in 250 ms
-Local: http://localhost:5173/
-```
-
-## Current Status ✅
-
-| Service | Port | Status |
-|---|---|---|
-| Frontend | 5173 | ✅ Running |
-| Backend | 3000 | ✅ Running |
-| Database | 27017 | ✅ Connected |
-| WebSocket | 3000 | ✅ Connected |
-
-## ✅ Ready to Test
-
-Your API is now properly connected:
-1. Open http://localhost:5173 in browser
-2. Try login with any phone number
-3. Check browser console for errors
-4. Try creating an emergency
-
-## Prevention for Future
-
-### Auto-Kill on Port Conflicts
-If you get EADDRINUSE error again:
-
-```powershell
-# PowerShell: Find and kill process on port 3000
-$proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
-if ($proc) {
-  Stop-Process -Id $proc.OwningProcess -Force
+    # 2. Terminate only that specific process
+    Stop-Process -Id $proc.Id -Force
+    Write-Host "✅ Terminated PID $($proc.Id) holding port 3000."
+} else {
+    Write-Host "Port 3000 is already free."
 }
 ```
 
-### Or Use Different Port
+#### On Linux / macOS (Bash)
 ```bash
-# Start backend on port 3001
-PORT=3001 node server.js
+# 1. Identify PID on port 3000
+lsof -i :3000
 
-# Then update frontend/.env.local
-VITE_API_URL=http://localhost:3001
+# 2. Terminate that specific PID
+kill -15 <PID>
 ```
 
-### Or Use Process Manager
+---
+
+### Option B: Run SaHaay on an Alternative Port
+
+The SaHaay dispatch server respects the `PORT` environment variable:
+
 ```bash
-# Install pm2
-npm install -g pm2
+# Windows (PowerShell)
+$env:PORT="3001"; npm run dev:server
 
-# Start services
-pm2 start "node server.js" --name backend --cwd backend
-pm2 start "npm run dev" --name frontend --cwd frontend
-
-# View status
-pm2 list
-
-# Stop all
-pm2 kill
+# Linux / macOS (Bash)
+PORT=3001 npm run dev:server
 ```
 
-## Notes
+When running on an alternative port:
+- **Control Dashboard:** `http://localhost:3001/control`
+- **Health Check:** `http://localhost:3001/health`
+- **Ambulance Fleet:** `http://localhost:3001/ambulances`
 
-- Redis connection errors are OK (optional service)
-- MongoDB connected successfully ✅
-- All core functionality working
+---
 
-## Next: Test the App
+## Verifying the Active Prototype
 
-1. Frontend loads at http://localhost:5173
-2. Try login
-3. Should see either:
-   - ✅ Login successful
-   - ⚠️ User not found (if first time) - then register
-4. No 404 errors on `/api/auth/login`
+Once the port is free, start the zero-dependency in-memory dispatch server:
 
+```bash
+npm run dev:server
+```
+
+Expected startup log:
+```text
+🌱 Seeded 25 ambulances across Ahmedabad
+🚀 SaHaay Server running on port 3000
+🎛️  Control Dashboard: http://localhost:3000/control
+🩺 Health check:      http://localhost:3000/health
+```
+
+---
+
+## Architecture Note: Current Prototype vs. Legacy Stack
+
+| Dimension | Active Prototype (Current Demo) | Legacy Reference (`backend/` & `frontend/`) |
+|:---|:---|:---|
+| **Server** | TypeScript dispatch engine (`server/src/index.ts`) on port 3000 | JavaScript Express API with MongoDB & Twilio (`backend/server.js`) |
+| **Control UI** | Standalone dashboard at `http://localhost:3000/control` | Vite React 18 frontend on port 5173 (`frontend/`) |
+| **Database** | In-memory spatial grid index (zero cloud/DB dependencies) | Local MongoDB on port 27017 |
+| **Run Command**| `npm run dev:server` | `cd backend && npm start` + `cd frontend && npm run dev` |

@@ -1,9 +1,11 @@
 # 🚑 SaHaay Frontend (Legacy Vite Web Client)
 
-> [!NOTE]
-> This folder contains the legacy Vite + React 18 web dashboard and historical Expo 49 packages.  
-> For the new zero-dependency in-memory dispatch server and unified architecture, see [README.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/README.md) and [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md).  
-> The new standalone Control Dashboard is served directly at `http://localhost:3000/control`.
+> [!WARNING]
+> **LEGACY ARCHITECTURE REFERENCE ONLY — NOT THE PRIMARY HACKATHON DEMO**  
+> This directory contains the historical Vite + React 18 web dashboard and legacy Expo SDK 49 sketches.  
+> It relies on the legacy MongoDB backend and external Google Maps API keys.  
+> **The active Hack for Social Cause 2027 prototype is the zero-dependency in-memory TypeScript dispatch server and Control Dashboard served at `http://localhost:3000/control`.**  
+> See the root [README.md](../README.md) and [docs/progress.md](../docs/progress.md) for running the active system.
 
 Complete React frontend for the Emergency Ambulance Dispatch Platform.
 

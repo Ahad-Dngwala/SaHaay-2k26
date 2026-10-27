@@ -6,7 +6,7 @@
 - **Repo:** https://github.com/Ahad-Dngwala/SaHaay-2k26
 - **Target event:** MY Bharat — *Hack for Social Cause* (VBYLD 2026/2027), theme **Healthcare, Wellbeing & Service Delivery**
 - **Document basis:** Pitch deck (`organized.pdf`), system brief, and code analysis. Everything marked below is verified against working code.
-- **Progress Report:** See [docs/progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/progress.md) for full implementation details.
+- **Progress Report:** See [docs/progress.md](../docs/progress.md) for full implementation details.
 
 ---
 

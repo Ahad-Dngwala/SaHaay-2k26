@@ -1,8 +1,9 @@
 # 🚀 Quick Start Guide — Legacy Frontend (Vite)
 
-> [!NOTE]
-> This quickstart is for the legacy Vite client (`frontend/`).  
-> The primary hackathon runner requires **zero cloud setup** and starts with `npm run dev:server` from the repository root. See [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md) for details.
+> [!WARNING]
+> **LEGACY RUNNER ONLY — NOT REQUIRED FOR DEMO**  
+> This quickstart is for the historical Vite client (`frontend/`).  
+> The active prototype requires **zero cloud setup**, zero API keys, and starts directly with `npm run dev:server` from the repository root (Control Dashboard at `http://localhost:3000/control`). See [docs/progress.md](../docs/progress.md) for details.
 
 ```bash
 cd frontend

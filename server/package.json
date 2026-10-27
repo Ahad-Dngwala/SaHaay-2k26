@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "SaHaay in-memory dispatch server (Node + Express + ws, TypeScript, zero external dependencies)",
+  "license": "FSL-1.1-ALv2",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",

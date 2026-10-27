@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > This document records the feature set implemented for the legacy Vite dashboard.  
-> For the new in-memory dispatch engine, sub-millisecond benchmarks, compact Base36 SMS protocol, and SHA-256 audit chain, please refer to [progress.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/progress.md) and the root [README.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/README.md).
+> For the new in-memory dispatch engine, sub-millisecond benchmarks, compact Base36 SMS protocol, and SHA-256 audit chain, please refer to [progress.md](../progress.md) and the root [README.md](../README.md).
 
 ### 1. **Emergency Detection & Creation**
 ✅ **ACCIDENT DETECTED BUTTON**
@@ -138,19 +138,10 @@
 - Transfer history (with reason)
 - Metrics (response times, success rates)
 
-## 🚀 Production Ready
+## ⚠️ Historical / Legacy Architecture Reference
+- Legacy Backend: MongoDB + Socket.io + Twilio (reference in `backend/`)
+- Legacy Frontend: Vite + React 18 web client (reference in `frontend/`)
+- Active Hackathon Prototype: Zero-dependency in-memory TypeScript dispatch server on port 3000 with standalone dashboard at `http://localhost:3000/control`
 
-✅ **Complete System:**
-- Backend: Fully functional (no changes needed)
-- Frontend: Complete implementation
-- Real-time: WebSocket integrated
-- Maps: Google Maps fully integrated
-- Routing: Directions API working
-- Database: All models connected
-- API: All endpoints working
-
----
-
-**Status**: ✅ **COMPLETE FULL-STACK EMERGENCY DISPATCH PLATFORM**
-
-Your solution is 100% implemented! 🎉
+**Status**: 📁 **HISTORICAL ARCHITECTURE REFERENCE PRESERVED**  
+For the active prototype, please refer to the root [README.md](../README.md) and [docs/progress.md](../docs/progress.md).

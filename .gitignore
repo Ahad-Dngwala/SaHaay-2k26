@@ -30,6 +30,11 @@ Thumbs.db
 dist/
 build/
 server/dist/
+frontend/dist/
+*.tsbuildinfo
+.expo/
+.cache/
+
 
 # Test coverage
 coverage/

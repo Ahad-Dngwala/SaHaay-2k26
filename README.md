@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/Status-Operational-success?style=for-the-badge)
 [![CI](https://github.com/Ahad-Dngwala/SaHaay-2k26/actions/workflows/sahaay-ci.yml/badge.svg)](https://github.com/Ahad-Dngwala/SaHaay-2k26/actions/workflows/sahaay-ci.yml)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+[![License](https://img.shields.io/badge/License-FSL--1.1--ALv2-blue?style=for-the-badge)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge)
 ![Tests](https://img.shields.io/badge/Tests-58%20Passing-brightgreen?style=for-the-badge)
@@ -103,7 +103,7 @@ graph TD
 - **Empirically Measured Benchmark**: Measured with `npm run bench` (1,000 iterations per radius):
   - **1,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ at $500\text{ m}$.
   - **10,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ ($0.0033\text{ ms}$) at $500\text{ m}$.
-  - *Full benchmark report: [docs/BENCHMARK.md](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/BENCHMARK.md)*.
+  - *Full benchmark report: [docs/BENCHMARK.md](docs/BENCHMARK.md)*.
 - **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance (HTTP 200); any competing or late acceptances receive **HTTP 409 Conflict** and are cancelled.
 
 ### 2. 🛡️ Self-Healing Failover (Breakdown Protection)

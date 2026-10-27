@@ -14,21 +14,21 @@
 
 | Radius | Avg. Candidates Found | p50 | p95 | p99 | Max |
 |--------|----------------------|-----|-----|-----|-----|
-| 0.5 km | 0 | 3.0 µs | 6.0 µs | 0.017 ms | 4.086 ms |
-| 1.0 km | 0 | 1.6 µs | 2.5 µs | 2.8 µs | 0.017 ms |
-| 2.0 km | 1 | 3.3 µs | 6.3 µs | 0.018 ms | 0.106 ms |
-| 4.0 km | 5 | 4.1 µs | 8.9 µs | 0.013 ms | 0.042 ms |
-| 8.0 km | 15 | 9.2 µs | 0.014 ms | 0.022 ms | 1.671 ms |
+| 0.5 km | 0 | 3.0 µs | 6.0 µs | 0.015 ms | 3.661 ms |
+| 1.0 km | 0 | 1.6 µs | 2.7 µs | 6.0 µs | 0.039 ms |
+| 2.0 km | 3 | 3.5 µs | 5.7 µs | 9.0 µs | 0.075 ms |
+| 4.0 km | 5 | 5.3 µs | 8.8 µs | 0.013 ms | 1.716 ms |
+| 8.0 km | 11 | 0.012 ms | 0.020 ms | 0.036 ms | 0.092 ms |
 
 ## 10,000 Ambulances
 
 | Radius | Avg. Candidates Found | p50 | p95 | p99 | Max |
 |--------|----------------------|-----|-----|-----|-----|
-| 0.5 km | 0 | 2.7 µs | 3.9 µs | 4.1 µs | 0.019 ms |
-| 1.0 km | 3 | 3.7 µs | 4.2 µs | 5.4 µs | 1.693 ms |
-| 2.0 km | 12 | 5.6 µs | 6.8 µs | 0.013 ms | 0.077 ms |
-| 4.0 km | 34 | 8.6 µs | 0.013 ms | 0.025 ms | 1.266 ms |
-| 8.0 km | 96 | 0.023 ms | 0.037 ms | 0.075 ms | 0.665 ms |
+| 0.5 km | 1 | 2.6 µs | 3.9 µs | 8.0 µs | 0.260 ms |
+| 1.0 km | 5 | 3.8 µs | 4.5 µs | 6.2 µs | 0.102 ms |
+| 2.0 km | 12 | 4.2 µs | 6.7 µs | 0.010 ms | 0.183 ms |
+| 4.0 km | 32 | 8.7 µs | 0.018 ms | 0.050 ms | 1.876 ms |
+| 8.0 km | 109 | 0.026 ms | 0.044 ms | 0.095 ms | 0.896 ms |
 
 ## Interpretation
 
@@ -37,3 +37,7 @@ The SaHaay grid search uses a fixed-size spatial cell index (0.01° ≈ 1.11 km 
 **500 m radius (initial search ring)** at 10k ambulances: see table above.
 
 For a fair comparison: the end-to-end SOS dispatch latency (HTTP request → search → WebSocket offer) is dominated by network round-trip (typically 1–50 ms on LAN), not the search itself.
+
+### Presentation Guidance
+> **Recommended slide/pitch wording:**
+> *"In a synthetic 10,000-ambulance benchmark, the 500 m in-memory spatial search reported sub-millisecond p99 latency. This excludes end-to-end network and dispatch latency."*

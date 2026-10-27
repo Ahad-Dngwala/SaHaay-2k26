@@ -48,7 +48,7 @@ Where historical documents and the current specification conflict, **THIS SPEC W
 ### Conflict 1: Crash Countdown Duration
 - **Deck (`organized.pdf` / slides):** States **30 seconds** safety countdown before sending SOS.
 - **Pitch / Project Context:** Mentioned an earlier 5–10 seconds cancellation window.
-- **Authoritative Resolution:** `COUNTDOWN_SEC = 30` by default in [`src/core/config.ts`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/src/core/config.ts), configurable between 5 and 30 seconds (`COUNTDOWN_MIN = 5`, `COUNTDOWN_MAX = 30`). This supersedes the earlier 10-second draft. Gated by `CountdownTimer` which guarantees exactly-once SOS emission at expiry and zero emissions if cancelled.
+- **Authoritative Resolution:** `COUNTDOWN_SEC = 30` by default in [`src/core/config.ts`](../src/core/config.ts), configurable between 5 and 30 seconds (`COUNTDOWN_MIN = 5`, `COUNTDOWN_MAX = 30`). This supersedes the earlier 10-second draft. Gated by `CountdownTimer` which guarantees exactly-once SOS emission at expiry and zero emissions if cancelled.
 
 ### Conflict 2: Database & Infrastructure
 - **Deck & Legacy Backend:** Claims Cloud-Native MongoDB geospatial clusters, Redis queue, and Twilio GSM gateway.
@@ -68,7 +68,7 @@ Where historical documents and the current specification conflict, **THIS SPEC W
   `lon36 = base36(round((lon+180)*1e5))`
   `ts36 = base36(unix seconds)`
   `crc = 2-char base36 checksum`
-- **Resolution:** Implemented the exact spec formula in [`src/core/sosCodec.ts`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/src/core/sosCodec.ts), delivering ~1 m precision in $< 45$ characters.
+- **Resolution:** Implemented the exact spec formula in [`src/core/sosCodec.ts`](../src/core/sosCodec.ts), delivering ~1 m precision in $< 45$ characters.
 
 ### Conflict 5: App Architecture (Multi-package vs Unified Expo App)
 - **Legacy Frontend:** Split into `frontend/` (Vite) and `frontend/packages/` (separate unbuilt apps).
