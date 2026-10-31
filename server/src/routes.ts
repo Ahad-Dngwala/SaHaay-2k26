@@ -34,6 +34,12 @@ import {
   loginAdmin,
   verifySession,
 } from './auth';
+import {
+  registeredAuthorities,
+  filterSignalsForAuthority,
+  loadSignalsDataset,
+  RouteCheckpoint,
+} from './green-corridor';
 
 // Codec - inline the decode logic to avoid cross-package imports
 function crc8(input: string): string {
@@ -494,6 +500,63 @@ export function createRouter(): Router {
     const { lat, lon } = req.body as { lat: number; lon: number };
     updatePatientLocation(req.params.id, lat, lon);
     res.json({ ok: true });
+  });
+
+  // ── Green Corridor (Route-aware Advisory Pre-Clearance) ───────────────────────
+  router.get('/api/green-corridor/:missionId', (req: Request, res: Response) => {
+    const m = state.missions.get(req.params.missionId);
+    if (!m) {
+      res.status(404).json({ error: 'Mission not found' });
+      return;
+    }
+    res.json({
+      ok: true,
+      missionId: m.id,
+      status: m.status,
+      assignedAmbulanceId: m.assignedAmbulanceId,
+      checkpoints: m.routeCheckpoints || [],
+      disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (No Direct Signal Actuation)',
+    });
+  });
+
+  router.get('/api/authorities', (_req: Request, res: Response) => {
+    res.json({
+      ok: true,
+      authorities: registeredAuthorities,
+      disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (No Direct Signal Actuation)',
+    });
+  });
+
+  router.get('/api/authorities/:id/signals', (req: Request, res: Response) => {
+    const auth = registeredAuthorities.find(a => a.id === req.params.id);
+    if (!auth) {
+      res.status(404).json({ error: 'Traffic authority not found' });
+      return;
+    }
+
+    // Collect all active checkpoints across all active missions
+    const allActiveCheckpoints: RouteCheckpoint[] = [];
+    for (const m of state.missions.values()) {
+      if (['ASSIGNED', 'ENROUTE', 'ON_SCENE', 'TRANSPORTING'].includes(m.status) && m.routeCheckpoints) {
+        allActiveCheckpoints.push(...(m.routeCheckpoints as RouteCheckpoint[]));
+      }
+    }
+
+    const filtered = filterSignalsForAuthority(req.params.id, allActiveCheckpoints);
+
+    res.json({
+      ok: true,
+      authority: auth,
+      signals: filtered,
+      disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (No Direct Signal Actuation)',
+    });
+  });
+
+  router.get('/api/signals/all', (_req: Request, res: Response) => {
+    res.json({
+      ok: true,
+      signals: loadSignalsDataset(),
+    });
   });
 
   // ── SMS Inbound ─────────────────────────────────────────────────────────────

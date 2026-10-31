@@ -11,6 +11,8 @@ import { auditLog } from './audit';
 import { Config } from './config-server';
 import { broadcastToAll, broadcastToMission, sendToAmbulance } from './ws';
 import type { Mission, MissionStatus } from './types';
+import { defaultRoutingProvider, computeHaversineRouteSync } from './routing';
+import { selectRouteSignals, updateCorridorProgress, cancelCorridorCheckpoints, RouteCheckpoint } from './green-corridor';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -417,8 +419,14 @@ export function driverCancelMission(
     state.expansionTimers.delete(missionId);
   }
 
+  // Cancel any active green corridor checkpoints
+  if (m.routeCheckpoints && m.routeCheckpoints.length > 0) {
+    cancelCorridorCheckpoints(missionId, m.routeCheckpoints as RouteCheckpoint[], `Driver cancelled: ${reason}`);
+  }
+
   updateMission(missionId, {
     status: 'REDISPATCH',
+    routeCheckpoints: undefined,
     previousAmbulanceIds: [...m.previousAmbulanceIds, ambulanceId],
     assignedAmbulanceId: undefined,
     pendingOffers: [],
@@ -478,8 +486,14 @@ export function cancelMissionByPatient(
     });
   }
 
+  // Cancel any active green corridor checkpoints
+  if (m.routeCheckpoints && m.routeCheckpoints.length > 0) {
+    cancelCorridorCheckpoints(missionId, m.routeCheckpoints as RouteCheckpoint[], `Patient cancelled: ${reason}`);
+  }
+
   updateMission(missionId, {
     status: 'CANCELLED_BY_PATIENT',
+    routeCheckpoints: undefined,
     pendingOffers: [],
   });
 
@@ -527,8 +541,14 @@ export function reportBreakdown(missionId: string, ambulanceId: string): void {
     message: 'Vehicle marked out of service. Breakdown coordinates logged for recovery.',
   });
 
+  // Cancel active corridor checkpoints for the broken-down vehicle
+  if (m.routeCheckpoints && m.routeCheckpoints.length > 0) {
+    cancelCorridorCheckpoints(missionId, m.routeCheckpoints as RouteCheckpoint[], 'Ambulance breakdown');
+  }
+
   updateMission(missionId, {
     status: 'REDISPATCH',
+    routeCheckpoints: undefined,
     breakdownLat,
     breakdownLon,
     breakdownAmbulanceId: ambulanceId,
@@ -587,6 +607,19 @@ export function recordTelemetry(
   if (!activeMission) {
     stallTrackers.delete(ambulanceId);
     return;
+  }
+
+  // Progress Green Corridor checkpoints if any
+  if (activeMission.routeCheckpoints && activeMission.routeCheckpoints.length > 0) {
+    const { updatedCheckpoints } = updateCorridorProgress(
+      activeMission.id,
+      ambulanceId,
+      lat,
+      lon,
+      speedKmh,
+      activeMission.routeCheckpoints as RouteCheckpoint[]
+    );
+    updateMission(activeMission.id, { routeCheckpoints: updatedCheckpoints });
   }
 
   const distToPatient = haversineSimple(lat, lon, activeMission.patientLatLive, activeMission.patientLonLive);
@@ -757,57 +790,33 @@ export function updatePatientLocation(missionId: string, lat: number, lon: numbe
 
 // ── Green Corridor ────────────────────────────────────────────────────────────
 
-function _generateGreenCorridor(missionId: string): void {
+export function generateGreenCorridorSync(missionId: string): RouteCheckpoint[] {
   const m = state.missions.get(missionId);
-  if (!m || !m.assignedAmbulanceId) return;
+  if (!m || !m.assignedAmbulanceId) return [];
 
   const ambu = state.ambulances.get(m.assignedAmbulanceId);
-  if (!ambu) return;
+  if (!ambu) return [];
 
-  // Use known Ahmedabad junctions / major intersections along likely routes
-  // In production this would come from real routing; here we pick nearby ones
-  const JUNCTIONS = [
-    { name: 'CG Road Junction',        lat: 23.0317, lon: 72.5579 },
-    { name: 'Navrangpura Crossroads',   lat: 23.0330, lon: 72.5607 },
-    { name: 'Ashram Road Circle',       lat: 23.0222, lon: 72.5804 },
-    { name: 'BRTS Corridor South',      lat: 23.0100, lon: 72.5700 },
-    { name: 'Vastrapur Lake Junction',  lat: 23.0387, lon: 72.5253 },
-    { name: 'SG Highway Flyover',       lat: 23.0530, lon: 72.5200 },
-    { name: 'Satellite Road Cross',     lat: 23.0170, lon: 72.5100 },
-    { name: 'Thaltej Char Rasta',       lat: 23.0594, lon: 72.5105 },
-    { name: 'Maninagar Crossroads',     lat: 22.9944, lon: 72.6036 },
-    { name: '132 ft Ring Road Circle',  lat: 23.0650, lon: 72.5600 },
-  ];
+  const route = computeHaversineRouteSync(
+    { lat: ambu.lat, lon: ambu.lon },
+    { lat: m.patientLatLive, lon: m.patientLonLive }
+  );
 
-  // Select junctions roughly between ambulance and patient
-  const patLat = m.patientLatLive;
-  const patLon = m.patientLonLive;
-
-  const checkpoints = JUNCTIONS
-    .map(j => {
-      const distM = haversineSimple(ambu.lat, ambu.lon, j.lat, j.lon);
-      const distToPatient = haversineSimple(j.lat, j.lon, patLat, patLon);
-      const ambToPatient  = haversineSimple(ambu.lat, ambu.lon, patLat, patLon);
-      return { ...j, distM, distToPatient, ambToPatient };
-    })
-    // Only junctions closer to patient than ambulance is, and within 5 km
-    .filter(j => j.distToPatient < j.ambToPatient && j.distM < 5000)
-    .sort((a, b) => a.distM - b.distM)
-    .slice(0, 4) // max 4 checkpoints for clarity
-    .map((j, idx) => ({
-      name: j.name,
-      lat: j.lat,
-      lon: j.lon,
-      distanceFromPatientM: Math.round(j.distToPatient),
-      etaS: Math.round((j.distM / 1000) / 40 * 3600), // rough ETA at 40 km/h
-      alerted: false,
-    }));
+  const checkpoints = selectRouteSignals(
+    route.geometry,
+    ambu.lat,
+    ambu.lon,
+    m.patientLatLive,
+    m.patientLonLive,
+    ambu.speedKmh || 35
+  );
 
   updateMission(missionId, { routeCheckpoints: checkpoints });
   auditLog('GREEN_CORRIDOR_COMPUTED', {
     missionId,
-    checkpoints: checkpoints.map(c => c.name),
-    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (Simulated - No Direct Signal Actuation)',
+    checkpointsCount: checkpoints.length,
+    checkpoints: checkpoints.map(c => ({ id: c.id, name: c.name, etaS: c.etaS })),
+    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (No Direct Signal Actuation)',
   });
 
   // Broadcast to authority/control clients
@@ -816,8 +825,18 @@ function _generateGreenCorridor(missionId: string): void {
     missionId,
     ambulanceId: ambu.id,
     checkpoints,
-    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (Simulated - No Direct Signal Actuation)',
+    disclaimer: 'ADVISORY PRE-CLEARANCE NOTIFICATION ONLY (No Direct Signal Actuation)',
   });
+
+  return checkpoints;
+}
+
+export function generateGreenCorridor(missionId: string): RouteCheckpoint[] {
+  return generateGreenCorridorSync(missionId);
+}
+
+function _generateGreenCorridor(missionId: string): void {
+  generateGreenCorridorSync(missionId);
 }
 
 /**

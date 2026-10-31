@@ -1,0 +1,182 @@
+[
+  {
+    "id": "sig-01",
+    "name": "Navrangpura Crossroads (CG Road)",
+    "lat": 23.0364,
+    "lon": 72.5611,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-02",
+    "name": "Stadium Six Crossroads",
+    "lat": 23.0415,
+    "lon": 72.5642,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-03",
+    "name": "Commerce Six Road Circle",
+    "lat": 23.0452,
+    "lon": 72.5539,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-04",
+    "name": "University Road Char Rasta",
+    "lat": 23.0381,
+    "lon": 72.5482,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-05",
+    "name": "Vastrapur Lake Junction",
+    "lat": 23.0387,
+    "lon": 72.5253,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-06",
+    "name": "IIM Crossroads",
+    "lat": 23.0315,
+    "lon": 72.5358,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-07",
+    "name": "Shivranjani Crossroads (132ft Ring Rd)",
+    "lat": 23.0238,
+    "lon": 72.5305,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-08",
+    "name": "Nehrunagar Circle",
+    "lat": 23.0195,
+    "lon": 72.5418,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-09",
+    "name": "Paldi Char Rasta",
+    "lat": 23.0142,
+    "lon": 72.5658,
+    "area": "Ahmedabad Central",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-10",
+    "name": "Ellisbridge / SVP Hospital Junction",
+    "lat": 23.0192,
+    "lon": 72.5718,
+    "area": "Ahmedabad Central",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-11",
+    "name": "Ashram Road Circle (Income Tax)",
+    "lat": 23.0428,
+    "lon": 72.5732,
+    "area": "Ahmedabad Central",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-12",
+    "name": "Usmanpura Crossroads",
+    "lat": 23.0495,
+    "lon": 72.5710,
+    "area": "Ahmedabad Central",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-13",
+    "name": "Subhash Bridge Circle",
+    "lat": 23.0642,
+    "lon": 72.5835,
+    "area": "Ahmedabad North",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-14",
+    "name": "Civil Hospital Asarwa Gate Signal",
+    "lat": 23.0531,
+    "lon": 72.5975,
+    "area": "Ahmedabad North",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-15",
+    "name": "SG Highway - Pakwan Crossroads",
+    "lat": 23.0435,
+    "lon": 72.5185,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-16",
+    "name": "SG Highway - Thaltej Flyover Junction",
+    "lat": 23.0594,
+    "lon": 72.5105,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-17",
+    "name": "Zydus Hospital SG Highway Signal",
+    "lat": 23.0645,
+    "lon": 72.5182,
+    "area": "Ahmedabad West",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-18",
+    "name": "Maninagar Railway Crossing Signal",
+    "lat": 22.9982,
+    "lon": 72.6025,
+    "area": "Ahmedabad South",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-19",
+    "name": "Kankaria Lake Gate 1 Crossroads",
+    "lat": 23.0062,
+    "lon": 72.6012,
+    "area": "Ahmedabad South",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  },
+  {
+    "id": "sig-20",
+    "name": "Geeta Mandir Bus Port Junction",
+    "lat": 23.0135,
+    "lon": 72.5892,
+    "area": "Ahmedabad Central",
+    "source": "OSM",
+    "fetchedAt": "2026-10-31T12:00:00Z"
+  }
+]

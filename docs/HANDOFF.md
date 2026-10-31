@@ -1,6 +1,6 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M14 Background Crash Detection Completed)
+## SESSION: 2026-10-31 (M15 Real Green Corridor Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
@@ -9,12 +9,17 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 
 ---
 
-## NEXT: M15 — Real Green Corridor (Advisory Pre-Clearance Lifecycle)
-1. **Signal dataset:** Generate/validate OSM-derived signal dataset for Ahmedabad (`data/signals.json`) covering highway=traffic_signals & major junctions.
-2. **Route-aware selection:** Snap real OSRM route polyline to signals within 25 m; calculate per-signal ETA from ambulance's last real GPS fix.
-3. **Alert lifecycle:** Implement signal state transitions `PLANNED -> ALERTED (when ETA <= GREEN_CORRIDOR_LEAD_S = 60s) -> PASSED (within 30 m) -> CANCELLED`.
-4. **Authority scoping:** Filter authority view by geographic boundary/bbox.
-5. **Driven-route replay test:** Unit test on recorded OSRM response asserting exact alert sequence and timing.
+## NEXT: M16 — Real SMS Fallback (Two Phones, GSM / Dual-Path)
+1. **SMS Protocol Codec (`smsProtocol.ts`):** Extend Base36 compact GSM 7-bit packets:
+   - `S1`: SOS trigger (patient -> server/gateway)
+   - `A1`: Offer dispatch (server/gateway -> driver)
+   - `T1`: Driver accept / decline (driver -> server/gateway)
+   - `O1`: In-flight telemetry / ETA (driver -> patient)
+   - `D1`: Destination hospital assigned (server/gateway -> driver)
+   - `X1`: Abort / cancellation / breakdown
+2. **Android Native `SmsBridge`:** Implement native SMS transmission (`SmsManager`) and reception (`BroadcastReceiver` for `android.provider.Telephony.SMS_RECEIVED`).
+3. **In-App Gateway Mode (Driver App):** Option in driver app to act as an SMS-to-HTTP relay gateway when phone has mobile data connectivity.
+4. **Offline Demo Journey Test:** Verification test running the full emergency lifecycle strictly over SMS protocol packets.
 
 ---
 
@@ -65,6 +70,17 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 - [x] Recompiled and signed native release APKs (`SaHaay-Citizen.apk` and `SaHaay-Driver.apk`).
 - [x] Verified deployment and live execution on `emulator-5554`: foreground service started, armed, disarmed, and logged to logcat.
 - [x] 73 / 73 automated tests passing across 10 test suites (`npm test`).
+
+### M15: Real Green Corridor (Advisory Pre-Clearance Lifecycle)
+- [x] Generated real traffic signals dataset for Ahmedabad (`data/signals.json`) with exact geographic coordinates, areas, and OSM IDs.
+- [x] Implemented real route-snapping geometry engine (`distanceToPolylineM` with 25 m perpendicular threshold) in `server/src/green-corridor.ts`.
+- [x] Implemented full signal lifecycle state machine (`PLANNED -> ALERTED (when ETA <= GREEN_CORRIDOR_LEAD_S = 60s) -> PASSED (within 30 m) -> CANCELLED`).
+- [x] Implemented division-level traffic authority scoping (`filterSignalsForAuthority`) by bounding box and municipal police divisions (West, Central, North).
+- [x] Integrated into server dispatch: automatic route generation upon ambulance assignment (`acceptMission`), real-time checkpoint progression via driver telemetry (`recordTelemetry`), and graceful cancellation upon breakdown/abort.
+- [x] Exposed REST endpoints (`GET /api/green-corridor/:missionId`, `GET /api/authorities`, `GET /api/authorities/:id/signals`, `GET /api/signals/all`) with mandatory advisory disclaimers on every payload.
+- [x] Added automated verification test suite `server/src/green-corridor.test.ts`.
+- [x] 79 / 79 automated tests passing across 11 test suites (`npm test`).
+- [x] TypeScript clean (`npx tsc --noEmit`) and reality-check clean (`node scripts/reality-check.js`).
 
 ---
 

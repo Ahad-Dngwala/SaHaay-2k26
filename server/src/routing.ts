@@ -33,40 +33,44 @@ function cacheKey(o: LatLon, d: LatLon): string {
   return `${o.lat.toFixed(3)},${o.lon.toFixed(3)}->${d.lat.toFixed(3)},${d.lon.toFixed(3)}`;
 }
 
+export function computeHaversineRouteSync(origin: LatLon, destination: LatLon): RouteResult {
+  const R = 6371e3; // metres
+  const φ1 = (origin.lat * Math.PI) / 180;
+  const φ2 = (destination.lat * Math.PI) / 180;
+  const Δφ = ((destination.lat - origin.lat) * Math.PI) / 180;
+  const Δλ = ((destination.lon - origin.lon) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceM = Math.round(R * c);
+
+  // Assume average speed 36 km/h = 10 m/s
+  const durationS = Math.max(10, Math.round(distanceM / 10));
+
+  // Simple interpolated line
+  const stepsCount = 10;
+  const geometry: [number, number][] = [];
+  for (let i = 0; i <= stepsCount; i++) {
+    const frac = i / stepsCount;
+    geometry.push([
+      Number((origin.lat + (destination.lat - origin.lat) * frac).toFixed(5)),
+      Number((origin.lon + (destination.lon - origin.lon) * frac).toFixed(5)),
+    ]);
+  }
+
+  return {
+    provider: 'haversine',
+    distanceM,
+    durationS,
+    geometry,
+  };
+}
+
 export class HaversineFallbackProvider implements RoutingProvider {
   async getRoute(origin: LatLon, destination: LatLon): Promise<RouteResult> {
-    const R = 6371e3; // metres
-    const φ1 = (origin.lat * Math.PI) / 180;
-    const φ2 = (destination.lat * Math.PI) / 180;
-    const Δφ = ((destination.lat - origin.lat) * Math.PI) / 180;
-    const Δλ = ((destination.lon - origin.lon) * Math.PI) / 180;
-
-    const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distanceM = Math.round(R * c);
-
-    // Assume average speed 36 km/h = 10 m/s
-    const durationS = Math.max(10, Math.round(distanceM / 10));
-
-    // Simple interpolated line
-    const stepsCount = 10;
-    const geometry: [number, number][] = [];
-    for (let i = 0; i <= stepsCount; i++) {
-      const frac = i / stepsCount;
-      geometry.push([
-        Number((origin.lat + (destination.lat - origin.lat) * frac).toFixed(5)),
-        Number((origin.lon + (destination.lon - origin.lon) * frac).toFixed(5)),
-      ]);
-    }
-
-    return {
-      provider: 'haversine',
-      distanceM,
-      durationS,
-      geometry,
-    };
+    return computeHaversineRouteSync(origin, destination);
   }
 }
 

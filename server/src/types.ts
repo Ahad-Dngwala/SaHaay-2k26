@@ -63,12 +63,19 @@ export interface Mission {
 }
 
 export interface GreenCorridorCheckpoint {
+  id: string;
   name: string;
   lat: number;
   lon: number;
+  area: string;
   distanceFromPatientM: number;
+  distanceAlongRouteM: number;
   etaS: number; // estimated seconds to reach from current ambulance pos
+  confidenceWindowS: number;
+  state: 'PLANNED' | 'ALERTED' | 'PASSED' | 'CANCELLED';
   alerted: boolean;
+  alertedAt?: number;
+  passedAt?: number;
 }
 
 export interface AuditEntry {
