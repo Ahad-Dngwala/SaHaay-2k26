@@ -1,6 +1,8 @@
 package org.sahaay.citizen;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,6 +28,48 @@ public class SaHaayCitizenBridge {
     @JavascriptInterface
     public String getAppRole() {
         return "citizen";
+    }
+
+    @JavascriptInterface
+    public void armCrashMonitor(boolean sustainedShakeMode) {
+        Intent intent = new Intent(context, CrashMonitorService.class);
+        intent.setAction(CrashMonitorService.ACTION_START);
+        intent.putExtra(CrashMonitorService.EXTRA_MODE, sustainedShakeMode ? "SUSTAINED_SHAKE" : "IMPACT");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+        showToast("Crash Guard Armed (" + (sustainedShakeMode ? "Sustained Shake" : "Impact") + " Mode)");
+    }
+
+    @JavascriptInterface
+    public void disarmCrashMonitor() {
+        Intent intent = new Intent(context, CrashMonitorService.class);
+        intent.setAction(CrashMonitorService.ACTION_STOP);
+        context.startService(intent);
+        showToast("Crash Guard Disarmed");
+    }
+
+    @JavascriptInterface
+    public boolean isCrashMonitorArmed() {
+        SharedPreferences prefs = context.getSharedPreferences("sahaay_prefs", Context.MODE_PRIVATE);
+        return prefs.getBoolean("crash_monitor_armed", false);
+    }
+
+    @JavascriptInterface
+    public void cancelCrashCountdown() {
+        Intent intent = new Intent(context, CrashMonitorService.class);
+        intent.setAction(CrashMonitorService.ACTION_CANCEL_COUNTDOWN);
+        context.startService(intent);
+    }
+
+    @JavascriptInterface
+    public void triggerTestCrash() {
+        Intent intent = new Intent(context, CrashMonitorService.class);
+        intent.setAction(CrashMonitorService.ACTION_TEST_CRASH);
+        context.startService(intent);
     }
 
     @JavascriptInterface

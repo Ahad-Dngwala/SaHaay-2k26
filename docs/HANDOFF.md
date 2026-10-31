@@ -1,6 +1,6 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M13 Self-Healing on Devices Completed)
+## SESSION: 2026-10-31 (M14 Background Crash Detection Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
@@ -9,11 +9,12 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 
 ---
 
-## NEXT: M14 — Background Crash Detection (Native Service + Quick Settings Tile)
-1. Export golden vector waveforms (`PHONE_DROP`, `POTHOLE`, `CRASH_3G`, `CRASH_2_5G`) to `packages/core/test-vectors/crash-waveforms.json`.
-2. Port `CrashDetector.ts` to native Android Kotlin `CrashMonitorService` with dual-mode support (`IMPACT` vs `SUSTAINED_SHAKE`).
-3. Implement `TileService` for Quick Settings arm/disarm toggle.
-4. Verify golden vectors in both Jest and native tests.
+## NEXT: M15 — Real Green Corridor (Advisory Pre-Clearance Lifecycle)
+1. **Signal dataset:** Generate/validate OSM-derived signal dataset for Ahmedabad (`data/signals.json`) covering highway=traffic_signals & major junctions.
+2. **Route-aware selection:** Snap real OSRM route polyline to signals within 25 m; calculate per-signal ETA from ambulance's last real GPS fix.
+3. **Alert lifecycle:** Implement signal state transitions `PLANNED -> ALERTED (when ETA <= GREEN_CORRIDOR_LEAD_S = 60s) -> PASSED (within 30 m) -> CANCELLED`.
+4. **Authority scoping:** Filter authority view by geographic boundary/bbox.
+5. **Driven-route replay test:** Unit test on recorded OSRM response asserting exact alert sequence and timing.
 
 ---
 
@@ -54,8 +55,19 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 - [x] 71 / 71 automated tests passing across 10 test suites (`npm test`).
 - [x] Zero issues in `scripts/reality-check.js`.
 
+### M14: Background Crash Detection
+- [x] Exported golden waveform test vectors (`PHONE_DROP`, `POTHOLE`, `CRASH_3G`, `CRASH_2_5G`, `SUSTAINED_SHAKE`) to `packages/core/test-vectors/crash-waveforms.json`.
+- [x] Enhanced `CrashDetector` with dual-mode evaluation: `IMPACT` (>= 2.5 g sustained >= 100 ms + stillness) vs `SUSTAINED_SHAKE` (continuous shaking >= 1.8 g for >= 3 s for real-phone testing).
+- [x] Implemented native Android `CrashMonitorService` foreground service holding a partial wake lock, sampling `TYPE_ACCELEROMETER` at ~50 Hz (`SENSOR_DELAY_GAME`), and managing countdown + cancellation.
+- [x] Implemented Android Quick Settings `CrashTileService` (`TileService`) for instant arm/disarm toggle from system drawer.
+- [x] Implemented `BootReceiver` for persisting and auto-resuming monitoring across phone reboots.
+- [x] Updated `SaHaayCitizenBridge` JavaScript interface to expose arm, disarm, state, countdown cancel, and test trigger to WebViews.
+- [x] Recompiled and signed native release APKs (`SaHaay-Citizen.apk` and `SaHaay-Driver.apk`).
+- [x] Verified deployment and live execution on `emulator-5554`: foreground service started, armed, disarmed, and logged to logcat.
+- [x] 73 / 73 automated tests passing across 10 test suites (`npm test`).
+
 ---
 
 ## KNOWN ISSUES / DECISIONS
-- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, ready for deployment via `adb install` to connected physical devices or AVD `Bixuu-mobile`.
-- **Reality Check Compliance:** Eliminating pseudo-random carriers in `SmsTransport.ts` and hardcoded geohashes in `sos.html` keeps `scripts/reality-check.js` 100% green.
+- **D8 Inner Class Serialization:** Anonymous and non-static inner classes on Android Java 8 bytecode can cause D8 parameter length null checks. Resolved by using named top-level runnable classes (`SosHttpTask.java`) and having services implement interfaces directly.
+- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, tested on `emulator-5554` and ready for physical device deployment.

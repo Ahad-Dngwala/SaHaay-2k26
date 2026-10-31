@@ -121,6 +121,22 @@
       "heading": 0,
       "speedKmh": 0,
       "createdAt": 1793443882626
+    },
+    "amb-reg-5284": {
+      "id": "amb-reg-5284",
+      "name": "Suresh Parmar",
+      "phone": "+919898005277",
+      "licenseNo": "GJ-01-2024-755277",
+      "vehicleNo": "GJ-01-CZ-9999",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793444755284
     }
   },
   "news": {
@@ -214,6 +230,19 @@
       "status": "PUBLISHED",
       "publishedAt": 1793443882662,
       "createdAt": 1793443882662
+    },
+    "news-1793444755338": {
+      "id": "news-1793444755338",
+      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
+      "category": "GOVT_ALERT",
+      "priority": "HIGH",
+      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "officialSource": "Gujarat Disaster Management Authority",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793444755338,
+      "createdAt": 1793444755338
     }
   },
   "releases": {
