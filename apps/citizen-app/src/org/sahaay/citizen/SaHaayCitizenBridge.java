@@ -88,6 +88,24 @@ public class SaHaayCitizenBridge {
         }
     }
 
+    @JavascriptInterface
+    public boolean sendSms(String phoneNumber, String message) {
+        try {
+            android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
+            sms.sendTextMessage(phoneNumber, null, message, null, null);
+            showToast("SOS SMS sent via GSM");
+            return true;
+        } catch (Exception e) {
+            showToast("SMS send error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @JavascriptInterface
+    public String getLastReceivedSms() {
+        return SmsReceiver.lastReceivedMessage;
+    }
+
     public static class ToastRunnable implements Runnable {
         private final Context ctx;
         private final String msg;

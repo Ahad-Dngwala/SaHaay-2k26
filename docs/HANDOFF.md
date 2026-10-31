@@ -1,6 +1,6 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M15 Real Green Corridor Completed)
+## SESSION: 2026-10-31 (M16 Real SMS Fallback Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
@@ -9,17 +9,14 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 
 ---
 
-## NEXT: M16 — Real SMS Fallback (Two Phones, GSM / Dual-Path)
-1. **SMS Protocol Codec (`smsProtocol.ts`):** Extend Base36 compact GSM 7-bit packets:
-   - `S1`: SOS trigger (patient -> server/gateway)
-   - `A1`: Offer dispatch (server/gateway -> driver)
-   - `T1`: Driver accept / decline (driver -> server/gateway)
-   - `O1`: In-flight telemetry / ETA (driver -> patient)
-   - `D1`: Destination hospital assigned (server/gateway -> driver)
-   - `X1`: Abort / cancellation / breakdown
-2. **Android Native `SmsBridge`:** Implement native SMS transmission (`SmsManager`) and reception (`BroadcastReceiver` for `android.provider.Telephony.SMS_RECEIVED`).
-3. **In-App Gateway Mode (Driver App):** Option in driver app to act as an SMS-to-HTTP relay gateway when phone has mobile data connectivity.
-4. **Offline Demo Journey Test:** Verification test running the full emergency lifecycle strictly over SMS protocol packets.
+## NEXT: M17 — Consolidated Web Console (`/console`)
+1. **Unified Dashboard (`/console`):** Consolidate `control.html`, `sos.html`, and legacy admin into one production React console with role-based views:
+   - **Operator:** Real MapLibre live map, mission timeline, manual overrides (reassign, expand ring, cancel).
+   - **Traffic Authority:** Scoped division view with real-time signal advisory pre-clearance cards.
+   - **Admin:** Driver verification review, authority CRUD, news/announcement feed broadcast.
+   - **Dev Tools (hidden in prod):** Speed scale, tamper injector, blackout probe toggle.
+2. **Citizen Web Fallback:** Keep a lightweight web client at `/sos` (browser geolocation + real `encodeS1`) as fallback for non-app users.
+3. **End-to-End Verification:** Ensure all console views consume live server REST & WebSocket state.
 
 ---
 
@@ -80,7 +77,19 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 - [x] Exposed REST endpoints (`GET /api/green-corridor/:missionId`, `GET /api/authorities`, `GET /api/authorities/:id/signals`, `GET /api/signals/all`) with mandatory advisory disclaimers on every payload.
 - [x] Added automated verification test suite `server/src/green-corridor.test.ts`.
 - [x] 79 / 79 automated tests passing across 11 test suites (`npm test`).
-- [x] TypeScript clean (`npx tsc --noEmit`) and reality-check clean (`node scripts/reality-check.js`).
+
+### M16: Real SMS Fallback (Two Phones, GSM / Dual-Path)
+- [x] Implemented complete GSM-7 Base36 compact SMS protocol in `@sahaay/core` (`smsProtocol.ts`) covering all 6 packet types (`S1` SOS, `A1` Assignment, `T1` Telemetry ping, `O1` Driver offer, `D1` Driver reply, `X1` Cancellation) with CRC-8 and total non-throwing decoders.
+- [x] Implemented server-side `SmsGatewayManager` (`server/src/sms-gateway.ts`) with `LoopbackProvider`, `AndroidSmsGatewayProvider`, and in-app Driver gateway support.
+- [x] Added `/sms/gateway/outbox` and `/sms/gateway/ack` endpoints for outbound SMS spooling.
+- [x] Enhanced `POST /sms/inbound` to dynamically decode and handle all protocol packets (`S1`, `D1`, `X1`).
+- [x] Cleaned up `TransportManager.ts` by removing the no-op hack `_transition({ ... _no: true })`.
+- [x] Added native Android `SmsReceiver` and `SmsManager` integration to both Citizen and Driver APK manifests and bridges (`SaHaayCitizenBridge`, `SaHaayDriverBridge`).
+- [x] Implemented Driver app in-app Gateway mode with `ForwardSmsHttpTask` for two-phone live blackout demos without 3rd-party SaaS dependencies.
+- [x] Added automated test suite `server/src/sms-fallback.test.ts`.
+- [x] 87 / 87 automated tests passing across 12 test suites (`npm test`).
+- [x] Native APKs recompiled, signed, and verified installed on `emulator-5554`.
+- [x] Zero issues in `scripts/reality-check.js` and clean TypeScript (`npx tsc --noEmit`).
 
 ---
 

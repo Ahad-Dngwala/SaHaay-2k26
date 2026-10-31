@@ -6,3 +6,4 @@ export * from './crash/CountdownTimer';
 export * from './tracking/DeadReckoningTracker';
 export * from './transport/TransportManager';
 export * from './transport/types';
+export * from './smsProtocol';

@@ -99,8 +99,6 @@ export class TransportManager {
       return { ok: false, error: 'duplicate: queued' };
     }
 
-    this._transition({ type: 'HTTP_FAILURE', _no: true } as any); // no-op to get current state
-
     if (this.state.current === 'OFFLINE_SMS') {
       return this._sendSms(msg);
     }
@@ -136,7 +134,6 @@ export class TransportManager {
   // ── Internal ────────────────────────────────────────────────────────────────
 
   private _transition(event: TransportEvent): void {
-    if ((event as any)._no) return; // no-op hack
     const next = transportReducer(this.state, event);
     if (next.current !== this.state.current) {
       this.state = next;

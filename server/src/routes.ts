@@ -40,6 +40,15 @@ import {
   loadSignalsDataset,
   RouteCheckpoint,
 } from './green-corridor';
+import {
+  decodeSmsPacket,
+  encodeA1,
+  encodeT1,
+  encodeO1,
+  encodeX1,
+  SmsPacket,
+} from './sms-protocol-adapter';
+import { smsGateway } from './sms-gateway';
 
 // Codec - inline the decode logic to avoid cross-package imports
 function crc8(input: string): string {
@@ -559,47 +568,141 @@ export function createRouter(): Router {
     });
   });
 
-  // ── SMS Inbound ─────────────────────────────────────────────────────────────
+  // ── SMS Inbound & Fallback Gateway ──────────────────────────────────────────
   router.get('/sms/inbound', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
       endpoint: '/sms/inbound',
       supportedMethods: ['POST'],
-      description: 'SaHaay Simulated SMS Inbound Webhook. Send HTTP POST with { token } or form Body=<token>.',
+      description: 'SaHaay GSM SMS Inbound Gateway Webhook. Send HTTP POST with { token } or form Body=<token>.',
       example: { token: 'S1|9f3|0|ts5e587pk|230300|725800|37|1|f6' }
     });
   });
 
   router.post('/sms/inbound', (req: Request, res: Response) => {
-    const token: string = (req.body.token ?? req.body.Body ?? '').trim();
-    if (!token) { res.status(400).json({ error: 'token required (JSON: {token} or form: Body=)' }); return; }
+    const rawToken: string = (req.body.token ?? req.body.Body ?? '').trim();
+    const senderPhone: string = (req.body.From ?? req.body.sender ?? req.body.from ?? '').trim();
+    if (!rawToken) { res.status(400).json({ error: 'token required (JSON: {token} or form: Body=)' }); return; }
 
-    const decoded = decodeSmsToken(token);
+    // Parse packet via unified smsProtocol
+    const decoded = decodeSmsPacket(rawToken);
     if (!decoded.ok) {
-      auditLog('SMS_INBOUND_REJECTED', { token, reason: decoded.reason });
-      res.json({ ok: false, smsReply: `SOS FAILED: ${decoded.reason}` });
+      // Also try legacy S1 token fallback for backward compatibility
+      const legacy = decodeSmsToken(rawToken);
+      if (!legacy.ok) {
+        auditLog('SMS_INBOUND_REJECTED', { token: rawToken, reason: decoded.error });
+        res.json({ ok: false, smsReply: `SOS FAILED: ${decoded.error}` });
+        return;
+      }
+      // Process legacy S1
+      if (seenSosUids.has(legacy.uid)) {
+        const existing = Array.from(state.missions.values()).find(m => m.sosUid === legacy.uid);
+        res.json({ ok: true, smsReply: `SOS DUP: MID ${existing?.id ?? '?'}`, missionId: existing?.id, idempotent: true });
+        return;
+      }
+      seenSosUids.add(legacy.uid);
+      const mission = createMission({
+        patientLat: legacy.lat,
+        patientLon: legacy.lon,
+        addrId: legacy.addrId,
+        flags: legacy.flags,
+        sosUid: legacy.uid,
+      });
+      res.json({ ok: true, missionId: mission.id, smsReply: `SaHaay: MID ${mission.id}. Searching ambulance. Stay calm.` });
       return;
     }
 
-    if (seenSosUids.has(decoded.uid)) {
-      const existing = Array.from(state.missions.values()).find(m => m.sosUid === decoded.uid);
-      res.json({ ok: true, smsReply: `SOS DUP: MID ${existing?.id ?? '?'}`, missionId: existing?.id, idempotent: true });
-      return;
+    const { packet } = decoded;
+
+    switch (packet.type) {
+      case 'S1': {
+        if (seenSosUids.has(packet.uid)) {
+          const existing = Array.from(state.missions.values()).find(m => m.sosUid === packet.uid);
+          res.json({ ok: true, smsReply: `SOS DUP: MID ${existing?.id ?? '?'}`, missionId: existing?.id, idempotent: true });
+          return;
+        }
+        seenSosUids.add(packet.uid);
+        auditLog('SMS_INBOUND_S1', { uid: packet.uid, lat: packet.lat, lon: packet.lon, flags: packet.flags, from: senderPhone });
+
+        const mission = createMission({
+          patientLat: packet.lat,
+          patientLon: packet.lon,
+          addrId: packet.addrId,
+          flags: packet.flags,
+          sosUid: packet.uid,
+        });
+
+        const replyText = `SaHaay: MID ${mission.id}. Searching ambulance. Stay calm.`;
+        if (senderPhone) {
+          smsGateway.queueSms(senderPhone, replyText);
+        }
+        res.json({ ok: true, missionId: mission.id, packetType: 'S1', smsReply: replyText });
+        return;
+      }
+
+      case 'D1': {
+        auditLog('SMS_INBOUND_D1', { missionId: packet.missionId, action: packet.action, seq: packet.seq, lat: packet.lat, lon: packet.lon });
+        const m = state.missions.get(packet.missionId);
+        if (!m) {
+          res.status(404).json({ ok: false, error: 'Mission not found' });
+          return;
+        }
+
+        // Driver accept action
+        if (packet.action === 'ACC') {
+          const ambId = m.pendingOffers[0] || m.assignedAmbulanceId || 'amb-1';
+          const result = acceptMission(m.id, ambId);
+          res.json({ ok: result.won, missionId: m.id, action: 'ACC', won: result.won });
+          return;
+        }
+
+        if (packet.action === 'DEC') {
+          const ambId = m.pendingOffers[0] || 'amb-1';
+          declineMission(m.id, ambId);
+          res.json({ ok: true, missionId: m.id, action: 'DEC' });
+          return;
+        }
+
+        if (packet.action === 'POS') {
+          if (m.assignedAmbulanceId) {
+            recordTelemetry(m.assignedAmbulanceId, packet.lat, packet.lon, 35);
+          }
+          res.json({ ok: true, missionId: m.id, action: 'POS' });
+          return;
+        }
+
+        res.json({ ok: true, missionId: m.id, action: packet.action });
+        return;
+      }
+
+      case 'X1': {
+        auditLog('SMS_INBOUND_X1', { missionId: packet.missionId, reasonCode: packet.reasonCode });
+        cancelMissionByPatient(packet.missionId, `SMS cancellation: ${packet.reasonCode}`);
+        res.json({ ok: true, missionId: packet.missionId, cancelled: true });
+        return;
+      }
+
+      default:
+        res.json({ ok: true, packetType: (packet as any).type });
+        return;
     }
-    seenSosUids.add(decoded.uid);
+  });
 
-    auditLog('SMS_INBOUND', { uid: decoded.uid, lat: decoded.lat, lon: decoded.lon, flags: decoded.flags });
-
-    const mission = createMission({
-      patientLat: decoded.lat,
-      patientLon: decoded.lon,
-      addrId: decoded.addrId,
-      flags: decoded.flags,
-      sosUid: decoded.uid,
+  router.get('/sms/gateway/outbox', (_req: Request, res: Response) => {
+    res.json({
+      ok: true,
+      pending: smsGateway.getPendingOutbox(),
     });
+  });
 
-    const smsReply = `SaHaay: MID ${mission.id}. Searching ambulance. Stay calm.`;
-    res.json({ ok: true, missionId: mission.id, smsReply });
+  router.post('/sms/gateway/ack', (req: Request, res: Response) => {
+    const { id } = req.body as { id: string };
+    if (!id) {
+      res.status(400).json({ error: 'id required' });
+      return;
+    }
+    const acked = smsGateway.ackSms(id);
+    res.json({ ok: acked });
   });
 
 
