@@ -252,3 +252,4 @@ TIME    STEP
 ```
 
 > **Tip:** Use `POST /demo/time-scale` with `{ "scale": 10 }` to run the radius-expansion demo at 10× speed for time-limited presentations.
+

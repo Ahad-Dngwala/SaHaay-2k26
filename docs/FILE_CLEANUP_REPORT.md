@@ -10,7 +10,7 @@
 
 | Category | Count | Decision |
 |---|---|---|
-| Unreferenced screenshot artifacts | 7 PNGs | ⚠ CLEANUP CANDIDATE — safe to delete |
+| Unreferenced screenshot artifacts | 7 PNGs | ✅ DELETED — safely removed per user instruction |
 | Original Stitch design exports | 3 dirs | ✅ RETAIN — protected design source |
 | Legacy web experiment | `frontend/` | ✅ RETAIN — labelled LEGACY |
 | Historical pre-registration docs | `HSC Docs and Output/` | ✅ RETAIN — labelled HISTORICAL |
@@ -20,21 +20,21 @@
 
 ---
 
-## Unreferenced Screenshot Artifacts — `artifacts/*.png`
+## Unreferenced Screenshot Artifacts — `artifacts/*.png` (DELETED)
 
 > **Verification method:** `git grep` across all `*.md`, `*.ts`, `*.js`, `*.html` files returned zero matches for each filename listed below.
 
 | File | Size | Created | Reference Count | Decision |
 |---|---|---|---|---|
-| `artifacts/citizen-emulator-screen.png` | ~180 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/citizen-screen-final.png` | ~220 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/citizen-screen-verified.png` | ~200 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/citizen-verified.png` | ~190 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/driver-screen-final.png` | ~210 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/driver-screen.png` | ~180 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
-| `artifacts/driver-verified.png` | ~195 KB | During M10 | **0** | ⚠ CLEANUP CANDIDATE |
+| `artifacts/citizen-emulator-screen.png` | ~180 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/citizen-screen-final.png` | ~220 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/citizen-screen-verified.png` | ~200 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/citizen-verified.png` | ~190 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/driver-screen-final.png` | ~210 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/driver-screen.png` | ~180 KB | During M10 | **0** | ✅ DELETED |
+| `artifacts/driver-verified.png` | ~195 KB | During M10 | **0** | ✅ DELETED |
 
-**These 7 screenshots are emulator validation captures taken during M10 integration testing. They are not referenced in any documentation, README, or test. They may be safely deleted to reduce repository weight (~1.4 MB total), but no deletion has been performed in this audit — the decision is left to the repository owner.**
+**These 7 screenshots were emulator validation captures taken during M10 integration testing. They were not referenced in any documentation, README, or test. They have been deleted to reduce repository weight (~1.4 MB total).**
 
 ```powershell
 # Command to remove when ready (run from repo root):
@@ -153,3 +153,4 @@ During the M11 audit, a driver record (`amb-reg-9848`, phone `+919898000111`) wa
 | `.env.example` | Required onboarding reference |
 | `LICENSE.md` | FSL-1.1-ALv2 licence |
 | `README.md` | Primary project documentation |
+

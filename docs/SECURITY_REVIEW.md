@@ -233,3 +233,4 @@ Both Android APKs declare only the minimum required permissions in their `Androi
 | Audit log integrity | ✅ Implemented | — |
 | Admin auth middleware | ✅ Implemented | — |
 | No real secrets committed | ✅ Confirmed | — |
+

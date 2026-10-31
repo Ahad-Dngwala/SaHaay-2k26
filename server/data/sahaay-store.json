@@ -22,16 +22,16 @@
         "Sulfa drugs"
       ],
       "medicalNotes": "Type-1 diabetic. Asthmatic (inhaler carried).",
-      "createdAt": 1793178046996
+      "createdAt": 1793123879075
     }
   },
   "drivers": {
     "amb-01": {
       "id": "amb-01",
-      "name": "Ramesh Patel",
-      "phone": "+919825012345",
-      "licenseNo": "GJ-01-2019-004821",
-      "vehicleNo": "GJ-01-AX-4020",
+      "name": "Raju Patel",
+      "phone": "+919876500001",
+      "licenseNo": "GJ-01-2018-004521",
+      "vehicleNo": "GJ-01-AX-4422",
       "ambulanceType": "ALS",
       "isVerified": true,
       "verificationStatus": "VERIFIED",
@@ -58,11 +58,11 @@
       "speedKmh": 0,
       "createdAt": 1793350846996
     },
-    "amb-reg-7520": {
-      "id": "amb-reg-7520",
+    "amb-reg-4831": {
+      "id": "amb-reg-4831",
       "name": "Suresh Parmar",
-      "phone": "+919898007516",
-      "licenseNo": "GJ-01-2024-247516",
+      "phone": "+919898004827",
+      "licenseNo": "GJ-01-2024-134827",
       "vehicleNo": "GJ-01-CZ-9999",
       "ambulanceType": "ALS",
       "isVerified": true,
@@ -72,23 +72,7 @@
       "currentLon": 72.5611,
       "heading": 0,
       "speedKmh": 0,
-      "createdAt": 1793437247520
-    },
-    "amb-reg-6847": {
-      "id": "amb-reg-6847",
-      "name": "Suresh Parmar",
-      "phone": "+919898006843",
-      "licenseNo": "GJ-01-2024-486843",
-      "vehicleNo": "GJ-01-CZ-9999",
-      "ambulanceType": "ALS",
-      "isVerified": true,
-      "verificationStatus": "VERIFIED",
-      "isOnDuty": true,
-      "currentLat": 23.0365,
-      "currentLon": 72.5611,
-      "heading": 0,
-      "speedKmh": 0,
-      "createdAt": 1793437486847
+      "createdAt": 1793439134831
     }
   },
   "news": {
@@ -131,8 +115,8 @@
       "publishedAt": 1793264446996,
       "createdAt": 1793264446996
     },
-    "news-1793437247547": {
-      "id": "news-1793437247547",
+    "news-1793439134857": {
+      "id": "news-1793439134857",
       "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
       "category": "GOVT_ALERT",
       "priority": "HIGH",
@@ -141,21 +125,8 @@
       "officialSource": "Gujarat Disaster Management Authority",
       "isPinned": false,
       "status": "PUBLISHED",
-      "publishedAt": 1793437247547,
-      "createdAt": 1793437247547
-    },
-    "news-1793437486880": {
-      "id": "news-1793437486880",
-      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
-      "category": "GOVT_ALERT",
-      "priority": "HIGH",
-      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
-      "sourceUrl": "https://gujhealth.gujarat.gov.in",
-      "officialSource": "Gujarat Disaster Management Authority",
-      "isPinned": false,
-      "status": "PUBLISHED",
-      "publishedAt": 1793437486880,
-      "createdAt": 1793437486880
+      "publishedAt": 1793439134857,
+      "createdAt": 1793439134857
     }
   },
   "releases": {
@@ -177,7 +148,7 @@
       ],
       "downloadUrl": "/downloads/SaHaay-Citizen.apk",
       "isPublished": true,
-      "publishedAt": 1793437246996
+      "publishedAt": 1793383079075
     },
     "rel-driver": {
       "id": "rel-driver",
@@ -198,7 +169,7 @@
       ],
       "downloadUrl": "/downloads/SaHaay-Driver.apk",
       "isPublished": true,
-      "publishedAt": 1793437246996
+      "publishedAt": 1793383079075
     }
   }
 }
