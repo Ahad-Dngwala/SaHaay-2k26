@@ -26,7 +26,8 @@ import android.util.Log;
 
 /**
  * Foreground service for real-time background crash detection.
- * Operates with screen off or app closed using a partial wake lock.
+ * Listens to Accelerometer and Gyroscope with partial wake lock.
+ * Dispatches full-screen alert notification on impact detection.
  */
 public class CrashMonitorService extends Service implements SensorEventListener, CrashDetector.CrashListener, Runnable {
     private static final String TAG = "CrashMonitorService";
@@ -42,6 +43,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
+    private Sensor gyroscope;
     private PowerManager.WakeLock wakeLock;
     private CrashDetector crashDetector;
     private NotificationManager notificationManager;
@@ -63,6 +65,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
 
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         }
 
         PowerManager pm = getSystemService(PowerManager.class);
@@ -78,7 +81,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
 
     @Override
     public void onCrashConfirmed(double peakG) {
-        Log.w(TAG, "CRASH CONFIRMED: peakG=" + peakG);
+        Log.w(TAG, "CRASH CONFIRMED: peakG=" + peakG + " angularVelocity=" + crashDetector.getPeakAngularVelocityRad());
         startSosCountdown(peakG);
     }
 
@@ -117,8 +120,13 @@ public class CrashMonitorService extends Service implements SensorEventListener,
             wakeLock.acquire(24 * 60 * 60 * 1000L); // Max 24 hours
         }
 
-        if (sensorManager != null && accelerometer != null) {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+        if (sensorManager != null) {
+            if (accelerometer != null) {
+                sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+            }
+            if (gyroscope != null) {
+                sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+            }
         }
 
         String modeName = crashDetector.getMode() == CrashDetector.MODE_SUSTAINED_SHAKE ? "SUSTAINED_SHAKE" : "IMPACT";
@@ -131,7 +139,6 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         Log.i(TAG, "Crash monitor armed in mode: " + modeName);
     }
 
-    @SuppressWarnings("deprecation")
     private void stopMonitoring() {
         if (!isArmed) return;
         isArmed = false;
@@ -199,8 +206,8 @@ public class CrashMonitorService extends Service implements SensorEventListener,
 
     private void triggerAutoSos(double peakG) {
         Log.e(TAG, "COUNTDOWN EXPIRED -> DISPATCHING AUTO-SOS (peakG=" + peakG + ")");
-        double lat = 23.033;
-        double lon = 72.560;
+        double lat = 23.0338;
+        double lon = 72.5850;
 
         try {
             LocationManager lm = getSystemService(LocationManager.class);
@@ -218,7 +225,6 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         new Thread(new SosHttpTask(lat, lon)).start();
     }
 
-    @SuppressWarnings("deprecation")
     private void triggerVibrationAlert() {
         if (vibrator != null && vibrator.hasVibrator()) {
             long[] pattern = {0, 500, 200, 500, 200, 500};
@@ -243,7 +249,6 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         }
     }
 
-    @SuppressWarnings("deprecation")
     private Notification buildMonitoringNotification() {
         Intent stopIntent = new Intent(this, CrashMonitorService.class);
         stopIntent.setAction(ACTION_STOP);
@@ -275,11 +280,18 @@ public class CrashMonitorService extends Service implements SensorEventListener,
                 .build();
     }
 
-    @SuppressWarnings("deprecation")
     private void updateCountdownNotification(int seconds, double peakG) {
         Intent cancelIntent = new Intent(this, CrashMonitorService.class);
         cancelIntent.setAction(ACTION_CANCEL_COUNTDOWN);
         PendingIntent cancelPi = PendingIntent.getService(this, 1, cancelIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // Heads-up Full Screen Intent to display immediately
+        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        fullScreenIntent.putExtra("crash_countdown", seconds);
+        fullScreenIntent.putExtra("peak_g", peakG);
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 2, fullScreenIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -305,6 +317,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
                 .setContentTitle("CRASH DETECTED — SOS in " + seconds + "s")
                 .setContentText(String.format("Impact peak: %.1fg. Tap CANCEL if you are safe.", peakG))
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setOngoing(true)
                 .build();
 
@@ -315,6 +328,8 @@ public class CrashMonitorService extends Service implements SensorEventListener,
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             crashDetector.onSample(event.values[0], event.values[1], event.values[2], System.currentTimeMillis());
+        } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            crashDetector.onGyroSample(event.values[0], event.values[1], event.values[2], System.currentTimeMillis());
         }
     }
 

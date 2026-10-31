@@ -177,6 +177,29 @@ export function createRouter(): Router {
     res.json(result);
   });
 
+  router.get('/api/driver/me', (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Driver authorization token required' });
+      return;
+    }
+    const token = authHeader.slice(7);
+    const session = verifySession(token);
+    if (!session || session.role !== 'driver') {
+      res.status(401).json({ error: 'Invalid or expired driver session' });
+      return;
+    }
+    const driver = storage.getDriver(session.userId);
+    if (!driver) {
+      res.status(404).json({ error: 'Driver not found' });
+      return;
+    }
+    const activeMission = Array.from(state.missions.values()).find(
+      m => m.assignedAmbulanceId === driver.id && ['ASSIGNED', 'ENROUTE', 'ON_SCENE', 'TRANSPORTING'].includes(m.status)
+    );
+    res.json({ ok: true, driver, activeMissionId: activeMission?.id || null });
+  });
+
   // Driver Duty Status Toggle (Mandatory Verification Gate!)
   router.post('/api/driver/:id/duty', (req: Request, res: Response) => {
     const driver = storage.getDriver(req.params.id);
@@ -383,9 +406,16 @@ export function createRouter(): Router {
   });
 
   router.post('/missions/:id/accept', (req: Request, res: Response) => {
-    const { ambulanceId } = req.body as { ambulanceId: string };
+    let { ambulanceId } = req.body as { ambulanceId?: string };
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const session = verifySession(authHeader.slice(7));
+      if (session && session.role === 'driver') {
+        ambulanceId = session.userId;
+      }
+    }
     if (!ambulanceId) {
-      res.status(400).json({ error: 'ambulanceId required', won: false });
+      res.status(400).json({ error: 'ambulanceId or driver Authorization required', won: false });
       return;
     }
     const result = acceptMission(req.params.id, ambulanceId);
@@ -402,8 +432,17 @@ export function createRouter(): Router {
   });
 
   router.post('/missions/:id/decline', (req: Request, res: Response) => {
-    const { ambulanceId } = req.body as { ambulanceId: string };
-    declineMission(req.params.id, ambulanceId);
+    let { ambulanceId } = req.body as { ambulanceId?: string };
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const session = verifySession(authHeader.slice(7));
+      if (session && session.role === 'driver') {
+        ambulanceId = session.userId;
+      }
+    }
+    if (ambulanceId) {
+      declineMission(req.params.id, ambulanceId);
+    }
     res.json({ ok: true });
   });
 

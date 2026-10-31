@@ -6,6 +6,7 @@
 
 import { state } from './state';
 import type { Ambulance } from './types';
+import { storage } from './storage';
 
 const SEED_AMBULANCES: Omit<Ambulance, 'id'>[] = [
   // Navrangpura cluster
@@ -66,12 +67,30 @@ const SEED_AMBULANCES: Omit<Ambulance, 'id'>[] = [
   { driverName: 'Haresh Gohil',   vehicleNo: 'GJ01ZC1616', lat: 22.9727, lon: 72.5088, status: 'AVAILABLE', heading: 180, speedKmh: 0, zone: 'Sarkhej' },
 ];
 
-/** Populate state.ambulances from seed data. Idempotent (clears first). */
+/** Populate state.ambulances and storage from seed data. Idempotent (clears first). */
 export function seedAmbulances(): void {
   state.ambulances.clear();
   SEED_AMBULANCES.forEach((ambu, i) => {
     const id = `AMB-${String(i + 1).padStart(2, '0')}`;
     state.ambulances.set(id, { id, ...ambu });
+
+    // Seed verified driver credentials into storage
+    storage.saveDriver({
+      id,
+      name: ambu.driverName,
+      phone: `98765000${String(i + 1).padStart(2, '0')}`,
+      licenseNo: `DL-GJ01-${2020000 + i}`,
+      vehicleNo: ambu.vehicleNo,
+      ambulanceType: 'ALS',
+      isVerified: true,
+      verificationStatus: 'VERIFIED',
+      isOnDuty: true,
+      currentLat: ambu.lat,
+      currentLon: ambu.lon,
+      heading: ambu.heading,
+      speedKmh: ambu.speedKmh,
+      createdAt: 1704067200000,
+    });
   });
-  console.log(`🌱 Seeded ${state.ambulances.size} ambulances across Ahmedabad`);
+  console.log(`🌱 Seeded ${state.ambulances.size} ambulances and verified drivers across Ahmedabad`);
 }

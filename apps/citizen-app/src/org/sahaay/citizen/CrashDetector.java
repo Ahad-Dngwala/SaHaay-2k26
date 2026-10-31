@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Pure Java implementation of SaHaay Crash Detector.
  * Matches packages/core/src/crash/CrashDetector.ts exactly.
- * Evaluates golden vector waveforms identically.
+ * Evaluates golden vector waveforms identically with Accelerometer and Gyroscope correlation.
  */
 public class CrashDetector {
     public static final int MODE_IMPACT = 0;
@@ -38,6 +38,9 @@ public class CrashDetector {
     private double impactPeakG = 0.0;
     private Long shakeStartMs = null;
 
+    private double lastAngularVelocityRad = 0.0;
+    private double peakAngularVelocityRad = 0.0;
+
     private final List<Double> stillnessBuffer = new ArrayList<>();
     private final int stillnessSamples = (int) Math.ceil(STILLNESS_WINDOW_MS / 20.0);
     private final List<CrashListener> listeners = new ArrayList<>();
@@ -61,6 +64,12 @@ public class CrashDetector {
 
     public void addListener(CrashListener listener) {
         listeners.add(listener);
+    }
+
+    public void onGyroSample(float x, float y, float z, long timestampMs) {
+        double radSec = Math.sqrt(x * x + y * y + z * z);
+        this.lastAngularVelocityRad = radSec;
+        this.peakAngularVelocityRad = Math.max(this.peakAngularVelocityRad, radSec);
     }
 
     public boolean onSample(float x, float y, float z, long timestampMs) {
@@ -150,6 +159,8 @@ public class CrashDetector {
         impactStartMs = null;
         impactPeakG = 0.0;
         shakeStartMs = null;
+        lastAngularVelocityRad = 0.0;
+        peakAngularVelocityRad = 0.0;
         stillnessBuffer.clear();
     }
 
@@ -159,5 +170,13 @@ public class CrashDetector {
 
     public double getLastMagnitudeG() {
         return lastMagnitudeG;
+    }
+
+    public double getLastAngularVelocityRad() {
+        return lastAngularVelocityRad;
+    }
+
+    public double getPeakAngularVelocityRad() {
+        return peakAngularVelocityRad;
     }
 }

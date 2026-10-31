@@ -35,6 +35,9 @@ export function initWss(wss: WebSocketServer): void {
         ws.close(4401, 'Unauthorized token');
         return;
       }
+    } else if (role === 'driver' && process.env.NODE_ENV !== 'test') {
+      ws.close(4401, 'Driver role requires authentication token');
+      return;
     }
 
     clients.set(ws, { role, missionId, ambulanceId });

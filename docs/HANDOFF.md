@@ -1,22 +1,22 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M18 Hardening, Benchmark & Full Prototype Verification Completed)
+## SESSION: 2026-10-31 (M19 Real Device Integration Repair Sprint Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
 SPEC: `docs/REAL_PROTOTYPE_SPEC.md` is authoritative.
 Goal: Real prototype running on real Android hardware + laptop server with zero simulation on demo path.
-Status: **ALL MILESTONES M10 THROUGH M18 COMPLETED & VERIFIED.**
+Status: **ALL MILESTONES M10 THROUGH M19 COMPLETED, INTEGRATED & VERIFIED ON DUAL EMULATORS.**
 
 ---
 
 ## DEMO READINESS: READY FOR JURY & LIVE EVALUATION
-- **Real Two-Phone Hardware Setup:**
-  - Citizen Phone: Running `artifacts/apk/SaHaay-Citizen.apk` with background accelerometer service + Quick Settings tile.
-  - Driver Phone: Running `artifacts/apk/SaHaay-Driver.apk` with duty management, targeted dispatch offers, real OSRM routing, and in-app Gateway mode.
-  - Laptop: Running authoritative dispatch backend at port 4000, serving React Web Console at `/console`.
+- **Real Two-Phone / Two-Emulator Hardware Setup:**
+  - Citizen Phone (`Bixuu-mobile` / `emulator-5554`): Running `artifacts/apk/SaHaay-Citizen.apk` with background accelerometer + gyroscope sensor listener, full-screen alert intent, Quick Settings tile, and real tile-backed Leaflet map.
+  - Driver Phone (`Ahad-mobile` / `emulator-5556`): Running `artifacts/apk/SaHaay-Driver.apk` with authenticated JWT session, targeted WebSocket offers, atomic first-accept lock, real Leaflet GPS route navigation, and in-app Gateway mode.
+  - Laptop / Central Server: Authoritative dispatch backend at port 3000/4000, serving React Web Console at `/console`.
 - **Zero Simulation:** Verified by `scripts/reality-check.js` (0 issues).
-- **Test Suite:** 87 / 87 automated unit/integration tests passing across 12 suites (`npm test`).
+- **Test Suite:** **91 / 91 automated tests passing** across 13 suites (`npm test`).
 - **Benchmark:** Spatial grid matching measured at **0.026 ms** p99 at 10,000 ambulances ($< 200\text{ ms}$ claim verified).
 
 ---
@@ -110,15 +110,44 @@ Status: **ALL MILESTONES M10 THROUGH M18 COMPLETED & VERIFIED.**
 - [x] TypeScript clean (`npx tsc --noEmit`) and reality check clean (`node scripts/reality-check.js`).
 - [x] Native APKs recompiled, signed, and verified installed on `emulator-5554`.
 - [x] Zero issues in `scripts/reality-check.js` and clean TypeScript (`npx tsc --noEmit`).
-- [x] **Android Java Cleanliness Audit:** Resolved all 19 deprecation and lint warnings across both native apps:
-  - `CrashMonitorService.java`: modernized service lookups via `getSystemService(Class)`, updated foreground stoppage to `STOP_FOREGROUND_REMOVE`, integrated `Notification.Action.Builder` with `Icon.createWithResource`.
-  - `SaHaayCitizenBridge.java` & `SaHaayDriverBridge.java`: upgraded `SmsManager` retrieval to `context.getSystemService(SmsManager.class)` (API 31+) with `@SuppressWarnings("deprecation")` fallback.
-  - `SmsReceiver.java` (Citizen & Driver): replaced deprecated `bundle.get("pdus")` and `createFromPdu` with modern `android.provider.Telephony.Sms.Intents.getMessagesFromIntent(intent)`.
-  - `SosHttpTask.java` & `ForwardSmsHttpTask.java`: replaced deprecated `new URL(String)` with `URI.create(url).toURL()`.
-  - Recompiled both APKs via `scripts/build-apk.ps1` with 0 warnings in `javac -Xlint:deprecation -Xlint:unchecked`.
+- [x] **Android Java Cleanliness Audit:** Resolved all 19 deprecation and lint warnings across both native apps.
+
+### M19: Real Device Integration Repair Sprint (Auth, Targeted Dispatch, Real Tile Maps, Accelerometer + Gyroscope, Dual Emulator Installation)
+- [x] **Part 1 — Mobile Runtime Reconciliation:**
+  - Audited `apps/citizen-app/`, `apps/driver-app/`, and `mobile-app/`.
+  - Documented canonical runtime architecture in `docs/MOBILE_RUNTIME_MAP.md`.
+- [x] **Milestone M1 — Identity, Auth & SQLite Persistence:**
+  - Added `sessions` table to SQLite in `server/src/db.ts` with auto-migration.
+  - Updated `server/src/auth.ts` to persist and verify sessions against SQLite with memory caching.
+  - Added `GET /api/driver/me` authenticated endpoint returning driver profile, vehicle details, and active assigned mission.
+  - Enforced secure admin login using `process.env.ADMIN_PASSWORD`.
+- [x] **Milestone M2 — Targeted Offers & Atomic Assignment:**
+  - Updated `server/src/ws.ts`: mandatory JWT token verification for driver WebSocket connections; unauthenticated driver connections rejected with HTTP 4401.
+  - Updated `apps/driver-app/assets/app.js`: eliminated hardcoded `amb-01` and replaced with dynamic authenticated session (`localStorage`).
+  - Removed polling interval (`setInterval(..., 2500)`): offers now delivered purely via WebSocket `DRIVER_OFFER` events.
+  - Atomic First-Accept Lock: `POST /missions/:id/accept` returns HTTP 200 `{ won: true }` for winner; competing drivers receive HTTP 409 `{ won: false }` and `OFFER_CANCELLED` WebSocket broadcast; Driver UI closes modal without navigating.
+- [x] **Milestone M3 — Real Online Tile Maps & Live Telemetry:**
+  - Bundled local offline-capable `leaflet.js` and `leaflet.css` in `apps/citizen-app/assets/` and `apps/driver-app/assets/`.
+  - Replaced SVG simulated road paths in `apps/citizen-app/assets/index.html` and `apps/driver-app/assets/index.html` with real Leaflet OpenStreetMap containers.
+  - Connected real OSRM polyline fetching (`/api/routing/route`) and live driver location reporting (`PATCH /ambulances/:id/location`).
+  - Removed fake step timer animation (`marker.style.top = ...`).
+- [x] **Milestone M4 — Native Android Crash Detection & Heads-Up Alerts:**
+  - Updated `CrashDetector.java` with gyroscope sample tracking (`onGyroSample`) and angular velocity peak evaluation.
+  - Updated `CrashMonitorService.java`: registered `Sensor.TYPE_ACCELEROMETER` AND `Sensor.TYPE_GYROSCOPE`, added full-screen heads-up intent (`setFullScreenIntent`), and dynamic location fix via `LocationManager`.
+  - Ensured `CrashTileService.java` synchronizes directly with service armed status.
+- [x] **Milestone M5 — Removal of Simulated Fallbacks in `mobile-app/`:**
+  - Removed automatic `quickAssign` fallback timer (`setTimeout 2500ms`) and `defaultDriver` in `mobile-app/src/context/AppContext.tsx`.
+  - Removed fake offline mission ID generation in `mobile-app/src/services/api.ts`.
+- [x] **Milestone M6 — Build, Dual-Emulator Installation & Regression Verification:**
+  - Recompiled and signed native APKs: `artifacts/apk/SaHaay-Citizen.apk` and `artifacts/apk/SaHaay-Driver.apk`.
+  - Launched and verified dual emulators: `Bixuu-mobile` (`emulator-5554`) and `Ahad-mobile` (`emulator-5556`).
+  - Installed `SaHaay-Citizen.apk` on `Bixuu-mobile` and `SaHaay-Driver.apk` on `Ahad-mobile`.
+  - Captured live device verification screenshots (`artifacts/bixuu-screen.png` and `artifacts/ahad-screen.png`).
+  - Added regression test suite `server/src/driver-auth-dispatch.test.ts`.
+  - All **91 / 91 tests passing** across 13 test suites (`npm test`).
 
 ---
 
 ## KNOWN ISSUES / DECISIONS
-- **D8 Inner Class Serialization:** Anonymous and non-static inner classes on Android Java 8 bytecode can cause D8 parameter length null checks. Resolved by using named top-level runnable classes (`SosHttpTask.java`) and having services implement interfaces directly.
-- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, tested on `emulator-5554` and ready for physical device deployment.
+- **Green Corridor Exclusion:** Green corridor features are explicitly decoupled from blocking core dispatch during this release.
+- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, verified on running AVDs `Bixuu-mobile` and `Ahad-mobile`.

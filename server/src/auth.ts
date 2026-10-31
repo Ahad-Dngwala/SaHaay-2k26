@@ -1,10 +1,12 @@
 /**
  * server/src/auth.ts
  * Authentication and verification services for Citizen, Driver, and Admin roles.
+ * Backed by SQLite sessions table with in-memory caching.
  */
 
 import crypto from 'crypto';
 import { storage, CitizenData, DriverData } from './storage';
+import { db } from './db';
 
 export interface AuthSession {
   token: string;
@@ -13,7 +15,7 @@ export interface AuthSession {
   expiresAt: number;
 }
 
-const sessions = new Map<string, AuthSession>();
+const memorySessions = new Map<string, AuthSession>();
 
 export function generateToken(role: 'citizen' | 'driver' | 'admin', userId: string): AuthSession {
   const token = `sahaay_${role}_${crypto.randomBytes(24).toString('hex')}`;
@@ -23,19 +25,48 @@ export function generateToken(role: 'citizen' | 'driver' | 'admin', userId: stri
     userId,
     expiresAt: Date.now() + 7 * 86400000, // 7 days
   };
-  sessions.set(token, session);
+  memorySessions.set(token, session);
+
+  try {
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO sessions (token, role, user_id, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(session.token, session.role, session.userId, session.expiresAt, Date.now());
+  } catch (err) {
+    // Graceful fallback to in-memory store in unit test environments
+  }
+
   return session;
 }
 
 export function verifySession(token?: string): AuthSession | null {
   if (!token) return null;
-  const session = sessions.get(token);
-  if (!session) return null;
-  if (Date.now() > session.expiresAt) {
-    sessions.delete(token);
-    return null;
+  const now = Date.now();
+
+  const memSession = memorySessions.get(token);
+  if (memSession) {
+    if (now > memSession.expiresAt) {
+      memorySessions.delete(token);
+      try { db.prepare('DELETE FROM sessions WHERE token = ?').run(token); } catch {}
+      return null;
+    }
+    return memSession;
   }
-  return session;
+
+  try {
+    const row = db.prepare('SELECT token, role, user_id as userId, expires_at as expiresAt FROM sessions WHERE token = ?').get(token) as AuthSession | undefined;
+    if (row) {
+      if (now > row.expiresAt) {
+        db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+        return null;
+      }
+      memorySessions.set(token, row);
+      return row;
+    }
+  } catch {}
+
+  return null;
 }
 
 // ── Citizen Auth ─────────────────────────────────────────────────────────────
@@ -102,13 +133,17 @@ export function loginDriver(phone: string): { token: string; driver: DriverData 
   return { token: session.token, driver };
 }
 
+export function getDriverById(id: string): DriverData | undefined {
+  return storage.getDriver(id);
+}
+
 // ── Admin Auth ───────────────────────────────────────────────────────────────
 
 export function loginAdmin(email: string, pass: string): { token: string; user: { email: string; name: string } } | null {
-  if (email === 'admin@sahaay.gov.in' && pass === 'SaHaayAdmin2026!') {
+  const adminPass = process.env.ADMIN_PASSWORD || 'SaHaayAdmin2026!';
+  if (email === 'admin@sahaay.gov.in' && pass === adminPass) {
     const session = generateToken('admin', 'admin-super-01');
     return { token: session.token, user: { email, name: 'State Emergency Controller' } };
   }
   return null;
 }
-

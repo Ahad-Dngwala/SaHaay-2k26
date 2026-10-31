@@ -1,7 +1,6 @@
 // apps/citizen-app/assets/app.js
-// SaHaay Citizen Native App Logic
+// SaHaay Citizen Native App Logic — Leaflet Maps & Live Telemetry
 
-// Check if running on Android emulator (10.0.2.2) or desktop browser (localhost)
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3000' 
   : 'http://10.0.2.2:3000';
@@ -11,6 +10,14 @@ let holdTimer = null;
 let countdownInterval = null;
 let countdownSeconds = 30;
 let isDispatching = false;
+let missionWs = null;
+
+let trackingMap = null;
+let patientMarker = null;
+let ambulanceMarker = null;
+let routePolyline = null;
+let currentPatientCoords = { lat: 23.0338, lon: 72.5850 };
+let currentAmbulanceCoords = null;
 
 function navigateTo(screenId) {
   document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden'));
@@ -27,7 +34,13 @@ function navigateTo(screenId) {
     }
   });
 
-  if (screenId === 'updates') fetchUpdates();
+  if (screenId === 'tracking') {
+    setTimeout(() => {
+      initCitizenMap();
+    }, 100);
+  } else if (screenId === 'updates') {
+    fetchUpdates();
+  }
 }
 
 function call112() {
@@ -35,7 +48,7 @@ function call112() {
     window.SaHaayNativeBridge.showToast('Connecting to 112 Government Hotline...');
     if (window.SaHaayNativeBridge.vibrate) window.SaHaayNativeBridge.vibrate(200);
   } else {
-    alert('Calling 112 National Emergency Hotline [Simulated Native Call]');
+    alert('Calling 112 National Emergency Hotline');
   }
 }
 
@@ -63,19 +76,34 @@ function cancelSosHold() {
   }
 }
 
+async function getLiveCoordinates() {
+  if (navigator.geolocation) {
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000, enableHighAccuracy: true });
+      });
+      return { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    } catch (e) {}
+  }
+  return { lat: 23.0338, lon: 72.5850 }; // Navrangpura default
+}
+
 async function executeSosDispatch() {
   if (isDispatching) return;
   isDispatching = true;
   const subtext = document.getElementById('sos-btn-subtext');
   if (subtext) subtext.textContent = 'DISPATCHING...';
 
+  const coords = await getLiveCoordinates();
+  currentPatientCoords = coords;
+
   try {
     const res = await fetch(`${API_BASE}/missions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        lat: 23.0338,
-        lon: 72.5850,
+        lat: coords.lat,
+        lon: coords.lon,
         flags: 0,
         sosUid: `cit-manual-${Date.now()}`
       })
@@ -84,10 +112,11 @@ async function executeSosDispatch() {
     if (data.ok && data.missionId) {
       activeMissionId = data.missionId;
       if (window.SaHaayNativeBridge) {
-        if (window.SaHaayNativeBridge.showToast) window.SaHaayNativeBridge.showToast(`SOS Dispatched! Mission ${data.missionId}`);
+        if (window.SaHaayNativeBridge.showToast) window.SaHaayNativeBridge.showToast(`SOS Dispatched! Search Ring Active.`);
         if (window.SaHaayNativeBridge.vibrate) window.SaHaayNativeBridge.vibrate(400);
       }
       navigateTo('tracking');
+      subscribeMissionWs(data.missionId);
       startMissionPolling(data.missionId);
     }
   } catch (err) {
@@ -145,9 +174,169 @@ function cancelCrashCountdown() {
   }
 }
 
-// ── Mission Tracking Telemetry ───────────────────────────────────────────────
+// ── Real Leaflet Map Management ──────────────────────────────────────────────
+function initCitizenMap() {
+  const mapElem = document.getElementById('citizen-tracking-map');
+  if (!mapElem || typeof L === 'undefined') return;
+
+  if (!trackingMap) {
+    trackingMap = L.map('citizen-tracking-map', {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([currentPatientCoords.lat, currentPatientCoords.lon], 14);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(trackingMap);
+
+    const patientIcon = L.divIcon({
+      className: 'patient-marker-div',
+      html: '<div class="w-8 h-8 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs"><i class="bi bi-geo-alt-fill"></i></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    patientMarker = L.marker([currentPatientCoords.lat, currentPatientCoords.lon], { icon: patientIcon }).addTo(trackingMap);
+  } else {
+    trackingMap.invalidateSize();
+    if (patientMarker) {
+      patientMarker.setLatLng([currentPatientCoords.lat, currentPatientCoords.lon]);
+    }
+  }
+
+  if (currentAmbulanceCoords) {
+    updateAmbulancePosition(currentAmbulanceCoords.lat, currentAmbulanceCoords.lon);
+  }
+}
+
+function updateAmbulancePosition(lat, lon) {
+  currentAmbulanceCoords = { lat, lon };
+  if (!trackingMap || typeof L === 'undefined') return;
+
+  const ambIcon = L.divIcon({
+    className: 'amb-marker-div',
+    html: '<div class="w-9 h-9 rounded-2xl bg-[#090d16] border-2 border-emerald-400 shadow-xl flex items-center justify-center text-base text-emerald-400"><i class="bi bi-hospital"></i></div>',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+
+  if (!ambulanceMarker) {
+    ambulanceMarker = L.marker([lat, lon], { icon: ambIcon }).addTo(trackingMap);
+  } else {
+    ambulanceMarker.setLatLng([lat, lon]);
+  }
+
+  // Draw real road route
+  fetchRealRoute(lat, lon, currentPatientCoords.lat, currentPatientCoords.lon);
+
+  if (patientMarker && ambulanceMarker) {
+    const bounds = L.latLngBounds([patientMarker.getLatLng(), ambulanceMarker.getLatLng()]);
+    trackingMap.fitBounds(bounds.pad(0.25));
+  }
+}
+
+async function fetchRealRoute(startLat, startLon, endLat, endLon) {
+  try {
+    const res = await fetch(`${API_BASE}/api/routing/route?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.coordinates && data.coordinates.length && trackingMap) {
+        if (routePolyline) trackingMap.removeLayer(routePolyline);
+        routePolyline = L.polyline(data.coordinates, {
+          color: '#ea3836',
+          weight: 5,
+          opacity: 0.85,
+          dashArray: '8, 6'
+        }).addTo(trackingMap);
+
+        const etaElem = document.getElementById('tracking-eta');
+        if (etaElem && data.durationMinutes) {
+          etaElem.textContent = `${Math.ceil(data.durationMinutes)} min (${data.distanceKm.toFixed(1)} km)`;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Route polyline error:', err);
+  }
+}
+
+// ── WebSocket Live Mission Subscription ──────────────────────────────────────
+function subscribeMissionWs(missionId) {
+  if (missionWs) {
+    try { missionWs.close(); } catch (e) {}
+    missionWs = null;
+  }
+
+  const wsUrl = (API_BASE.replace(/^http/, 'ws')) + `/?role=citizen&missionId=${missionId}`;
+  try {
+    missionWs = new WebSocket(wsUrl);
+    missionWs.onopen = () => console.log('Citizen WS connected to mission', missionId);
+    missionWs.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'MISSION_ASSIGNED') {
+          handleAssigned(msg);
+        } else if (msg.type === 'AMBULANCE_LOCATION' || msg.type === 'TELEMETRY_UPDATE') {
+          if (msg.lat && msg.lon) {
+            updateAmbulancePosition(msg.lat, msg.lon);
+          }
+        } else if (msg.type === 'MISSION_STATUS') {
+          handleStatusChange(msg.status);
+        }
+      } catch (err) {
+        console.warn('WS message parse err:', err);
+      }
+    };
+  } catch (e) {
+    console.warn('WS connection failed:', e);
+  }
+}
+
+function handleAssigned(data) {
+  const driverElem = document.getElementById('tracking-driver-name');
+  const vehicleElem = document.getElementById('tracking-vehicle-no');
+  if (driverElem) driverElem.textContent = data.driverName || 'Verified Paramedic';
+  if (vehicleElem) vehicleElem.textContent = `${data.vehicleNo || 'GJ01AB1234'} • Priority Unit`;
+
+  if (data.ambLat && data.ambLon) {
+    updateAmbulancePosition(data.ambLat, data.ambLon);
+  }
+  if (window.SaHaayNativeBridge && window.SaHaayNativeBridge.showToast) {
+    window.SaHaayNativeBridge.showToast(`Ambulance Assigned: ${data.vehicleNo}`);
+  }
+}
+
+function handleStatusChange(status) {
+  const etaElem = document.getElementById('tracking-eta');
+  const progBar = document.getElementById('tracking-progress-bar');
+
+  if (status === 'ENROUTE') {
+    if (progBar) progBar.style.width = '35%';
+  } else if (status === 'ON_SCENE') {
+    if (etaElem) {
+      etaElem.textContent = 'ARRIVED ON SCENE';
+      etaElem.className = 'text-sm font-extrabold text-emerald-600';
+    }
+    if (progBar) progBar.style.width = '70%';
+  } else if (status === 'TRANSPORTING') {
+    if (etaElem) {
+      etaElem.textContent = 'TRANSPORTING TO CIVIL HOSPITAL';
+      etaElem.className = 'text-xs font-bold text-sky-600';
+    }
+    if (progBar) progBar.style.width = '90%';
+  } else if (status === 'COMPLETED') {
+    if (etaElem) {
+      etaElem.textContent = 'HANDOVER COMPLETED';
+      etaElem.className = 'text-sm font-extrabold text-emerald-600';
+    }
+    if (progBar) {
+      progBar.style.width = '100%';
+      progBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-500';
+    }
+  }
+}
+
+// ── Polling Fallback ─────────────────────────────────────────────────────────
 function startMissionPolling(missionId) {
-  let step = 0;
   const interval = setInterval(async () => {
     try {
       const res = await fetch(`${API_BASE}/missions/${missionId}`);
@@ -156,42 +345,26 @@ function startMissionPolling(missionId) {
         if (m.assignedAmbulanceId) {
           const driverElem = document.getElementById('tracking-driver-name');
           const vehicleElem = document.getElementById('tracking-vehicle-no');
-          if (driverElem) driverElem.textContent = m.assignedDriverName || 'Ramesh Patel';
-          if (vehicleElem) vehicleElem.textContent = `${m.assignedVehicleNo || 'GJ-01-AX-4020'} • ALS Unit`;
+          if (driverElem) driverElem.textContent = m.assignedDriverName || 'Paramedic Unit';
+          if (vehicleElem) vehicleElem.textContent = `${m.assignedVehicleNo || 'GJ-01'} • ALS Unit`;
+
+          // Check if ambulance coords are available
+          const ambRes = await fetch(`${API_BASE}/ambulances`);
+          if (ambRes.ok) {
+            const ambulances = await ambRes.json();
+            const amb = ambulances.find(a => a.id === m.assignedAmbulanceId);
+            if (amb) {
+              updateAmbulancePosition(amb.lat, amb.lon);
+            }
+          }
         }
-        if (m.status === 'COMPLETED') {
-          const etaElem = document.getElementById('tracking-eta');
-          const progBar = document.getElementById('tracking-progress-bar');
-          if (etaElem) {
-            etaElem.textContent = 'ARRIVED';
-            etaElem.className = 'text-sm font-extrabold text-emerald-600';
-          }
-          if (progBar) {
-            progBar.style.width = '100%';
-            progBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-1000';
-          }
+        handleStatusChange(m.status);
+        if (m.status === 'COMPLETED' || m.status === 'CANCELLED') {
           clearInterval(interval);
-          return;
         }
       }
     } catch (e) {}
-
-    step++;
-    const eta = Math.max(1, 5 - step);
-    const etaElem = document.getElementById('tracking-eta');
-    if (etaElem) etaElem.textContent = `${eta} min`;
-    const progress = Math.min(95, 60 + step * 7);
-    const progBar = document.getElementById('tracking-progress-bar');
-    if (progBar) progBar.style.width = `${progress}%`;
-
-    const marker = document.getElementById('ambulance-marker');
-    if (marker) {
-      marker.style.top = `${75 + step * 25}px`;
-      marker.style.left = `${125 + step * 18}px`;
-    }
-
-    if (step >= 5) clearInterval(interval);
-  }, 3000);
+  }, 4000);
 }
 
 // ── Fetch Official Government Advisories ─────────────────────────────────────

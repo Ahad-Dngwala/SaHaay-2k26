@@ -208,21 +208,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         // Also offer to driver
         setIncomingOffer(missionObj);
-
-        // Auto quick-assign for demo if no human driver answers in 2s
-        setTimeout(async () => {
-          if (!missionObj.assignedAmbulanceId) {
-            await api.quickAssign(missionObj.id);
-            const updated = await api.fetchMission(missionObj.id);
-            if (updated) {
-              setActiveMission(updated);
-              setAssignedAmbulance(defaultDriver);
-            } else {
-              setAssignedAmbulance(defaultDriver);
-              setActiveMission((prev) => (prev ? { ...prev, status: 'ASSIGNED', assignedAmbulanceId: defaultDriver.id } : null));
-            }
-          }
-        }, 2500);
       } else {
         setSosError('Could not connect to dispatch server. Fallback to 112 or SMS.');
       }

@@ -48,12 +48,10 @@ class ApiService {
       });
       return await res.json();
     } catch (err) {
-      console.warn('[API] Server unreachable, triggering simulated fallback:', err);
-      // Fallback for offline demo mode
+      console.warn('[API] Dispatch server unreachable:', err);
       return {
-        ok: true,
-        missionId: `offline-${Date.now().toString(36)}`,
-        status: 'SEARCHING',
+        ok: false,
+        status: 'FAILED',
       };
     }
   }
