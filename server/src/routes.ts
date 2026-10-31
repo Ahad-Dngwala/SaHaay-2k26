@@ -21,6 +21,8 @@ import { seedAmbulances } from './seed';
 import { syncGrid, findAvailable } from './matching';
 import { broadcastToAll } from './ws';
 import { storage } from './storage';
+import { defaultRoutingProvider } from './routing';
+import { findNearestHospital } from './hospitals';
 import {
   authenticateCitizen,
   registerDriver,
@@ -468,6 +470,34 @@ export function createRouter(): Router {
     res.json({ ok: true, missionId: mission.id, smsReply });
   });
 
+
+  // ── Real Routing & ETA ───────────────────────────────────────────────────────
+  router.post('/api/routes/directions', async (req: Request, res: Response) => {
+    const { origin, destination } = req.body as {
+      origin?: { lat: number; lon: number };
+      destination?: { lat: number; lon: number };
+    };
+    if (!origin || !destination || origin.lat === undefined || destination.lat === undefined) {
+      res.status(400).json({ error: 'origin and destination with lat/lon required' });
+      return;
+    }
+    const route = await defaultRoutingProvider.getRoute(origin, destination);
+    res.json(route);
+  });
+
+  router.post('/api/routes/nearest-hospital', async (req: Request, res: Response) => {
+    const { location } = req.body as { location?: { lat: number; lon: number } };
+    if (!location || location.lat === undefined || location.lon === undefined) {
+      res.status(400).json({ error: 'location with lat/lon required' });
+      return;
+    }
+    const result = await findNearestHospital(location);
+    if (!result) {
+      res.status(404).json({ error: 'No hospitals available' });
+      return;
+    }
+    res.json(result);
+  });
   // ── Audit Log ───────────────────────────────────────────────────────────────
   router.get('/audit', (_req: Request, res: Response) => {
     res.json(state.audit);

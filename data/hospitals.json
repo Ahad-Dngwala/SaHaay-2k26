@@ -1,0 +1,82 @@
+[
+  {
+    "id": "hosp-01",
+    "name": "Civil Hospital Ahmedabad (Asarwa)",
+    "type": "GOVERNMENT_TERTIARY",
+    "lat": 23.0526,
+    "lon": 72.5971,
+    "emergencyPhone": "+917922683721",
+    "traumaCenter": true,
+    "icuBedsAvailable": 45
+  },
+  {
+    "id": "hosp-02",
+    "name": "VS Hospital / SVP Hospital (Ellisbridge)",
+    "type": "MUNICIPAL_TERTIARY",
+    "lat": 23.0189,
+    "lon": 72.5714,
+    "emergencyPhone": "+917926577621",
+    "traumaCenter": true,
+    "icuBedsAvailable": 32
+  },
+  {
+    "id": "hosp-03",
+    "name": "Zydus Hospital (SG Highway, Thaltej)",
+    "type": "PRIVATE_MULTISPECIALTY",
+    "lat": 23.0642,
+    "lon": 72.5186,
+    "emergencyPhone": "+917966190201",
+    "traumaCenter": true,
+    "icuBedsAvailable": 28
+  },
+  {
+    "id": "hosp-04",
+    "name": "Apollo Hospitals International (Bhat, Gandhinagar)",
+    "type": "PRIVATE_QUATERNARY",
+    "lat": 23.1118,
+    "lon": 72.6322,
+    "emergencyPhone": "+917966701800",
+    "traumaCenter": true,
+    "icuBedsAvailable": 35
+  },
+  {
+    "id": "hosp-05",
+    "name": "KD Hospital (Vaishno Devi Circle, SG Highway)",
+    "type": "PRIVATE_MULTISPECIALTY",
+    "lat": 23.1167,
+    "lon": 72.5447,
+    "emergencyPhone": "+917967770000",
+    "traumaCenter": true,
+    "icuBedsAvailable": 20
+  },
+  {
+    "id": "hosp-06",
+    "name": "Shardaben General Hospital (Saraspur)",
+    "type": "MUNICIPAL_GENERAL",
+    "lat": 23.0298,
+    "lon": 72.6105,
+    "emergencyPhone": "+917922921200",
+    "traumaCenter": false,
+    "icuBedsAvailable": 12
+  },
+  {
+    "id": "hosp-07",
+    "name": "LG Hospital (Maninagar)",
+    "type": "MUNICIPAL_TERTIARY",
+    "lat": 22.9975,
+    "lon": 72.6033,
+    "emergencyPhone": "+917925461300",
+    "traumaCenter": true,
+    "icuBedsAvailable": 24
+  },
+  {
+    "id": "hosp-08",
+    "name": "SAL Hospital (Drive-in Road, Thaltej)",
+    "type": "PRIVATE_MULTISPECIALTY",
+    "lat": 23.0519,
+    "lon": 72.5273,
+    "emergencyPhone": "+917966115600",
+    "traumaCenter": false,
+    "icuBedsAvailable": 18
+  }
+]
