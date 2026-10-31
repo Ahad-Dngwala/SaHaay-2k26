@@ -78,3 +78,4 @@ Many Android OEMs aggressively terminate background foreground services. Configu
 4. Phone A sends `S1` packet over GSM SMS to Phone B.
 5. Phone B relays packet to server over HTTP, receives dispatch match, and sends `A1` assignment SMS back to Phone A.
 6. Citizen app receives `A1` and renders approaching ambulance with **"via SMS"** badge!
+

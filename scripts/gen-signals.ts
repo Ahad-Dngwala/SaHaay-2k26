@@ -60,3 +60,4 @@ async function fetchOsmSignals(): Promise<void> {
 if (require.main === module) {
   fetchOsmSignals().catch(console.error);
 }
+
