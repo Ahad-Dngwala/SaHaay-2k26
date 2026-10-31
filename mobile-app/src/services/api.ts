@@ -51,7 +51,7 @@ class ApiService {
       console.warn('[API] Dispatch server unreachable:', err);
       return {
         ok: false,
-        status: 'FAILED',
+        status: 'UNKNOWN_DELIVERY',
       };
     }
   }

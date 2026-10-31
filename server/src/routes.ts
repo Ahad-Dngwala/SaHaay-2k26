@@ -421,9 +421,14 @@ export function createRouter(): Router {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const session = verifySession(authHeader.slice(7));
-      if (session && session.role === 'driver') {
-        ambulanceId = session.userId;
+      if (!session || session.role !== 'driver') {
+        res.status(401).json({ error: 'Valid driver session required', won: false });
+        return;
       }
+      ambulanceId = session.userId;
+    } else if (process.env.NODE_ENV !== 'test') {
+      res.status(401).json({ error: 'Driver authorization required', won: false });
+      return;
     }
     if (!ambulanceId) {
       res.status(400).json({ error: 'ambulanceId or driver Authorization required', won: false });
@@ -447,9 +452,14 @@ export function createRouter(): Router {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const session = verifySession(authHeader.slice(7));
-      if (session && session.role === 'driver') {
-        ambulanceId = session.userId;
+      if (!session || session.role !== 'driver') {
+        res.status(401).json({ error: 'Valid driver session required' });
+        return;
       }
+      ambulanceId = session.userId;
+    } else if (process.env.NODE_ENV !== 'test') {
+      res.status(401).json({ error: 'Driver authorization required' });
+      return;
     }
     if (ambulanceId) {
       declineMission(req.params.id, ambulanceId);

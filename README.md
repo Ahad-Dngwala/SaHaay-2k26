@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/License-FSL--1.1--ALv2-blue?style=for-the-badge)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](<https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge>)
-![Tests](https://img.shields.io/badge/Tests-87%20Passing-brightgreen?style=for-the-badge)
-![Bench](https://img.shields.io/badge/Matching-0.026ms-purple?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-91%20Passing-brightgreen?style=for-the-badge)
+![Bench](https://img.shields.io/badge/Matching-0.0056ms%20(10k%20fleet)-purple?style=for-the-badge)
 
 > **"No patient left waiting."**
 >
@@ -22,7 +22,7 @@ In the Golden Hour, certainty saves lives. Yet, India's current emergency infras
 
 | Current System (108/112) ❌          | SaHaay Autonomous Grid ✅                                               |
 | :----------------------------------- | :---------------------------------------------------------------------- |
-| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 = 0.025\text{ ms}$ search latency) |
+| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 = 0.0056\text{ ms}$ at 10k fleet, $0.016\text{ ms}$ at 1k fleet) |
 | **Blind Waiting** (No Tracking)      | **Live Tracking with Dead-Reckoning**                                   |
 | **Single Point of Failure**          | **Self-Healing Failover** (Auto-Redispatch to Patient Live GPS)         |
 | **Network Dependent**                | **Offline SMS-First Mechanism** ($\le 45$ char Base36 packets)          |

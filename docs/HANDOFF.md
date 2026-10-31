@@ -150,4 +150,4 @@ Status: **ALL MILESTONES M10 THROUGH M19 COMPLETED, INTEGRATED & VERIFIED ON DUA
 
 ## KNOWN ISSUES / DECISIONS
 - **Green Corridor Exclusion:** Green corridor features are explicitly decoupled from blocking core dispatch during this release.
-- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, verified on running AVDs `Bixuu-mobile` and `Ahad-mobile`.
+- **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, verified on AVDs Bixuu-mobile and Ahad-mobile. Physical dual-device verification on hardware with real GSM SIM cards and hardware accelerometers/gyroscopes remains a requirement for full telecommunication compliance testing prior to field deployment; AVD verification validates runtime behavior, WebSocket dispatch, and UI rendering without replacing physical hardware tests.

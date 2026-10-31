@@ -143,7 +143,11 @@ export function getDriverById(id: string): DriverData | undefined {
 // ── Admin Auth ───────────────────────────────────────────────────────────────
 
 export function loginAdmin(email: string, pass: string): { token: string; user: { email: string; name: string } } | null {
-  const adminPass = process.env.ADMIN_PASSWORD || 'SaHaayAdmin2026!';
+  const isProd = process.env.NODE_ENV === 'production';
+  const adminPass = process.env.ADMIN_PASSWORD || (!isProd ? 'SaHaayAdmin2026!' : undefined);
+  if (!adminPass) {
+    return null;
+  }
   if (email === 'admin@sahaay.gov.in' && pass === adminPass) {
     const session = generateToken('admin', 'admin-super-01');
     return { token: session.token, user: { email, name: 'State Emergency Controller' } };

@@ -76,10 +76,13 @@ async function initDriverSession() {
 
       updateDriverUI();
       connectDriverWebSocket();
+    } else {
+      console.warn('Driver login non-OK, scheduling retry...');
+      setTimeout(initDriverSession, 3000);
     }
   } catch (err) {
-    console.warn('Driver login fallback:', err);
-    connectDriverWebSocket();
+    console.warn('Driver login error, scheduling retry:', err);
+    setTimeout(initDriverSession, 3000);
   }
 }
 
@@ -302,11 +305,12 @@ function initDriverMap() {
   if (!driverMap) {
     driverMap = L.map('driver-nav-map', {
       zoomControl: false,
-      attributionControl: false
+      attributionControl: true
     }).setView([currentDriverCoords.lat, currentDriverCoords.lon], 14);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(driverMap);
 
     const ambIcon = L.divIcon({
@@ -335,22 +339,50 @@ function initDriverMap() {
 
 async function fetchDriverRoute(startLat, startLon, endLat, endLon) {
   try {
-    const res = await fetch(`${API_BASE}/api/routing/route?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.coordinates && data.coordinates.length && driverMap) {
-        if (routePolyline) driverMap.removeLayer(routePolyline);
-        routePolyline = L.polyline(data.coordinates, {
-          color: '#eb3824',
-          weight: 5,
-          opacity: 0.9,
-          dashArray: '8, 6'
-        }).addTo(driverMap);
-
-        if (driverMarker && targetMarker) {
-          const bounds = L.latLngBounds([driverMarker.getLatLng(), targetMarker.getLatLng()]);
-          driverMap.fitBounds(bounds.pad(0.2));
+    let coords = null;
+    try {
+      const res = await fetch(`${API_BASE}/api/routing/route?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.coordinates) && data.coordinates.length) {
+          coords = data.coordinates;
+        } else if (Array.isArray(data.geometry) && data.geometry.length) {
+          coords = data.geometry;
         }
+      }
+    } catch (_) {}
+
+    if (!coords) {
+      const postRes = await fetch(`${API_BASE}/api/routes/directions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origin: { lat: startLat, lon: startLon },
+          destination: { lat: endLat, lon: endLon }
+        })
+      });
+      if (postRes.ok) {
+        const routeData = await postRes.json();
+        if (Array.isArray(routeData.geometry) && routeData.geometry.length) {
+          coords = routeData.geometry;
+        } else if (Array.isArray(routeData.coordinates) && routeData.coordinates.length) {
+          coords = routeData.coordinates;
+        }
+      }
+    }
+
+    if (coords && coords.length && driverMap) {
+      if (routePolyline) driverMap.removeLayer(routePolyline);
+      routePolyline = L.polyline(coords, {
+        color: '#eb3824',
+        weight: 5,
+        opacity: 0.9,
+        dashArray: '8, 6'
+      }).addTo(driverMap);
+
+      if (driverMarker && targetMarker) {
+        const bounds = L.latLngBounds([driverMarker.getLatLng(), targetMarker.getLatLng()]);
+        driverMap.fitBounds(bounds.pad(0.2));
       }
     }
   } catch (err) {
@@ -403,6 +435,8 @@ function updateStageUI() {
 }
 
 async function advanceMissionStage() {
+  if (!activeMissionId) return;
+
   currentStageIndex++;
   if (currentStageIndex >= STAGES.length) {
     if (window.SaHaayDriverBridge && window.SaHaayDriverBridge.showToast) {
@@ -410,6 +444,7 @@ async function advanceMissionStage() {
     }
     if (telemetryTimer) clearInterval(telemetryTimer);
     activeMissionId = null;
+    currentStageIndex = 0;
     navigateTo('home');
     return;
   }

@@ -80,7 +80,8 @@ public class SaHaayDriverBridge {
     public static String getGatewayServerUrl() {
         if (appContext == null) return "http://10.0.2.2:4000";
         SharedPreferences prefs = appContext.getSharedPreferences("sahaay_prefs", Context.MODE_PRIVATE);
-        return prefs.getString("gateway_server_url", "http://10.0.2.2:4000");
+        String url = prefs.getString("gateway_server_url", "http://10.0.2.2:4000");
+        return url != null ? url : "http://10.0.2.2:4000";
     }
 
     @JavascriptInterface

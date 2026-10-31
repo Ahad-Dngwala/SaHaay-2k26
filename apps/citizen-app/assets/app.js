@@ -18,6 +18,8 @@ let ambulanceMarker = null;
 let routePolyline = null;
 let currentPatientCoords = { lat: 23.0338, lon: 72.5850 };
 let currentAmbulanceCoords = null;
+let missionPollingInterval = null;
+let currentMissionStatus = 'SEARCHING';
 
 function navigateTo(screenId) {
   document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden'));
@@ -115,6 +117,19 @@ async function executeSosDispatch() {
         if (window.SaHaayNativeBridge.showToast) window.SaHaayNativeBridge.showToast(`SOS Dispatched! Search Ring Active.`);
         if (window.SaHaayNativeBridge.vibrate) window.SaHaayNativeBridge.vibrate(400);
       }
+      if (missionPollingInterval) {
+        clearInterval(missionPollingInterval);
+        missionPollingInterval = null;
+      }
+      if (ambulanceMarker && trackingMap) {
+        trackingMap.removeLayer(ambulanceMarker);
+        ambulanceMarker = null;
+      }
+      if (routePolyline && trackingMap) {
+        trackingMap.removeLayer(routePolyline);
+        routePolyline = null;
+      }
+      currentMissionStatus = 'SEARCHING';
       navigateTo('tracking');
       subscribeMissionWs(data.missionId);
       startMissionPolling(data.missionId);
@@ -182,11 +197,12 @@ function initCitizenMap() {
   if (!trackingMap) {
     trackingMap = L.map('citizen-tracking-map', {
       zoomControl: false,
-      attributionControl: false
+      attributionControl: true
     }).setView([currentPatientCoords.lat, currentPatientCoords.lon], 14);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(trackingMap);
 
     const patientIcon = L.divIcon({
@@ -225,8 +241,18 @@ function updateAmbulancePosition(lat, lon) {
     ambulanceMarker.setLatLng([lat, lon]);
   }
 
-  // Draw real road route
-  fetchRealRoute(lat, lon, currentPatientCoords.lat, currentPatientCoords.lon);
+  // Draw real road route or clear when arrived / completed
+  if (currentMissionStatus === 'COMPLETED' || currentMissionStatus === 'CANCELLED' || currentMissionStatus === 'ON_SCENE') {
+    if (routePolyline && trackingMap) {
+      trackingMap.removeLayer(routePolyline);
+      routePolyline = null;
+    }
+  } else if (currentMissionStatus === 'TRANSPORTING') {
+    const hospitalCoords = { lat: 23.0525, lon: 72.5910 };
+    fetchRealRoute(lat, lon, hospitalCoords.lat, hospitalCoords.lon);
+  } else {
+    fetchRealRoute(lat, lon, currentPatientCoords.lat, currentPatientCoords.lon);
+  }
 
   if (patientMarker && ambulanceMarker) {
     const bounds = L.latLngBounds([patientMarker.getLatLng(), ambulanceMarker.getLatLng()]);
@@ -249,7 +275,7 @@ async function fetchRealRoute(startLat, startLon, endLat, endLon) {
         }).addTo(trackingMap);
 
         const etaElem = document.getElementById('tracking-eta');
-        if (etaElem && data.durationMinutes) {
+        if (etaElem && data.durationMinutes && (!currentMissionStatus || currentMissionStatus === 'ENROUTE' || currentMissionStatus === 'ASSIGNED' || currentMissionStatus === 'DISPATCHING' || currentMissionStatus === 'SEARCHING')) {
           etaElem.textContent = `${Math.ceil(data.durationMinutes)} min (${data.distanceKm.toFixed(1)} km)`;
         }
       }
@@ -306,6 +332,7 @@ function handleAssigned(data) {
 }
 
 function handleStatusChange(status) {
+  currentMissionStatus = status;
   const etaElem = document.getElementById('tracking-eta');
   const progBar = document.getElementById('tracking-progress-bar');
 
@@ -317,6 +344,10 @@ function handleStatusChange(status) {
       etaElem.className = 'text-sm font-extrabold text-emerald-600';
     }
     if (progBar) progBar.style.width = '70%';
+    if (routePolyline && trackingMap) {
+      trackingMap.removeLayer(routePolyline);
+      routePolyline = null;
+    }
   } else if (status === 'TRANSPORTING') {
     if (etaElem) {
       etaElem.textContent = 'TRANSPORTING TO CIVIL HOSPITAL';
@@ -332,12 +363,29 @@ function handleStatusChange(status) {
       progBar.style.width = '100%';
       progBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-500';
     }
+    if (routePolyline && trackingMap) {
+      trackingMap.removeLayer(routePolyline);
+      routePolyline = null;
+    }
+  } else if (status === 'CANCELLED') {
+    if (etaElem) {
+      etaElem.textContent = 'MISSION CANCELLED';
+      etaElem.className = 'text-sm font-extrabold text-red-500';
+    }
+    if (progBar) progBar.style.width = '0%';
+    if (routePolyline && trackingMap) {
+      trackingMap.removeLayer(routePolyline);
+      routePolyline = null;
+    }
   }
 }
 
 // ── Polling Fallback ─────────────────────────────────────────────────────────
 function startMissionPolling(missionId) {
-  const interval = setInterval(async () => {
+  if (missionPollingInterval) {
+    clearInterval(missionPollingInterval);
+  }
+  missionPollingInterval = setInterval(async () => {
     try {
       const res = await fetch(`${API_BASE}/missions/${missionId}`);
       if (res.ok) {
@@ -359,8 +407,31 @@ function startMissionPolling(missionId) {
           }
         }
         handleStatusChange(m.status);
-        if (m.status === 'COMPLETED' || m.status === 'CANCELLED') {
-          clearInterval(interval);
+        if (m.status === 'CANCELLED') {
+          if (missionPollingInterval) {
+            clearInterval(missionPollingInterval);
+            missionPollingInterval = null;
+          }
+          if (routePolyline && trackingMap) {
+            trackingMap.removeLayer(routePolyline);
+            routePolyline = null;
+          }
+          const etaElem = document.getElementById('tracking-eta');
+          if (etaElem) {
+            etaElem.textContent = 'MISSION CANCELLED';
+            etaElem.className = 'text-sm font-extrabold text-red-500';
+          }
+          const vehicleElem = document.getElementById('tracking-vehicle-no');
+          if (vehicleElem) {
+            vehicleElem.textContent = 'Mission was cancelled. Tap SOS to dispatch again.';
+          }
+          return;
+        }
+        if (m.status === 'COMPLETED') {
+          if (missionPollingInterval) {
+            clearInterval(missionPollingInterval);
+            missionPollingInterval = null;
+          }
         }
       }
     } catch (e) {}
