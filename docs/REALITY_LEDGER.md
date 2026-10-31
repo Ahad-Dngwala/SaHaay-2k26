@@ -5,7 +5,7 @@ Nothing on the demo path remains simulated, hardcoded, or faked.
 
 ---
 
-## 1. Active Stack Audit (`server/`, `src/core/`, `server/src/*.html`)
+## 1. Active Stack Audit (`server/`, `src/core/`, `apps/`, `server/src/*.html`)
 
 | # | Item / Feature | Exact File & Line | Original Problem (Simulated / Faked) | Real Replacement Plan | Milestone | Status | Resolution Details |
 |---|---|---|---|---|---|---|---|
@@ -24,6 +24,11 @@ Nothing on the demo path remains simulated, hardcoded, or faked.
 | 13 | **Unwired Crash Detector & Tracker** | `src/core/crash/CrashDetector.ts`, `src/core/tracking/DeadReckoningTracker.ts` | Fully tested in unit tests but wired to no real physical sensor or map layer in mobile apps. | Native Android Kotlin foreground service (`CrashMonitorService`) + Quick Settings tile + MapLibre integration. | M14 | **RESOLVED** | Kotlin `CrashMonitorService` background sensor listener created with tile toggle and countdown notification (`beeaa92`). |
 | 14 | **Missing Map in Web Control Interface** | `server/src/control.html` | README and docs claim "fleet map (Leaflet/Canvas)", but `control.html` only contained HTML tables. | MapLibre GL JS interactive real map in consolidated Web Console (`/console`). | M11 / M17 | **RESOLVED** | Integrated MapLibre GL JS into `/console` with real vector tiles, hospital routing polyline, and live ambulance markers (`71db7fd`). |
 | 15 | **Stale / Conflicting Rules** | `.agent/rules/sahaay.md` | Forbade native modules, APKs, and Gradle builds (superseded by `REAL_PROTOTYPE_SPEC.md`). | Replace rules with specification Section 10 rules permitting local Gradle & Expo native modules. | M10 | **RESOLVED** | Workspace rules updated to permit local Android SDK Gradle builds and native modules (`b1b5e25`). |
+| 16 | **Hardcoded Driver Identity & 2500ms Poller** | `apps/driver-app/assets/app.js:8-12, 217-230` | `driverId = 'amb-01'` with unauthenticated interval poller. | Authenticate with JWT (`POST /api/auth/driver/login`), listen for targeted `DRIVER_OFFER` over WebSocket, remove polling. | M19 | **RESOLVED** | Real auth flow implemented with local token storage, authenticated WS, and targeted offer modal (`90fe62e`). |
+| 17 | **Simulated SVG Road Map & Timer Steps** | `apps/citizen-app/assets/app.js:180-192`, `apps/citizen-app/assets/index.html:184-220` | Simulated SVG vector lines and fake `marker.style.top = step * 25` timer increments. | Embed local tile-backed Leaflet map with real OSM raster tiles, real OSRM polyline, and live telemetry updates. | M19 | **RESOLVED** | Integrated Leaflet 1.9.4 with OpenStreetMap tiles, `/api/routing/route` polylines, and live driver GPS positions (`90fe62e`). |
+| 18 | **Simulated Auto Quick-Assign Fallback** | `mobile-app/src/context/AppContext.tsx:212-225` | `setTimeout(2500ms)` automatically called `quickAssign` and assigned a fake default driver. | Remove automatic fallback; require real driver accept or explicit dispatch action. | M19 | **RESOLVED** | Removed timer fallback; atomic first-accept lock returns HTTP 409 on contention without auto-assigning (`90fe62e`). |
+| 19 | **Simulated Offline Fallback Mission** | `mobile-app/src/services/api.ts:53-57` | On network failure, returned fake mission `offline-...` with `ok: true`. | Return genuine network error `ok: false` and prompt 112 / SMS fallback. | M19 | **RESOLVED** | Removed fake mission generation; returns `ok: false, status: 'FAILED'` (`90fe62e`). |
+| 20 | **Missing Gyroscope & Heads-Up Alert** | `apps/citizen-app/src/org/sahaay/citizen/CrashMonitorService.java:65` | Registered only `TYPE_ACCELEROMETER`; lacked gyroscope correlation and full-screen alert intent. | Register `TYPE_ACCELEROMETER` + `TYPE_GYROSCOPE`, calculate angular velocity in `CrashDetector`, add `setFullScreenIntent`. | M19 | **RESOLVED** | Dual sensor registration and heads-up full-screen countdown intent implemented and verified (`90fe62e`). |
 
 ---
 
@@ -40,5 +45,6 @@ Nothing on the demo path remains simulated, hardcoded, or faked.
 ## 3. Discrepancies Between Docs and Reality
 
 1. **Endpoint Discrepancy:** `docs/walkthrough.md` documented `/ambulance/accept` and `/ambulance/breakdown`. Fixed: All documentation and code aligned to RESTful `/api/missions/:id/accept`, `/api/missions/:id/breakdown`, and `/api/missions/:id/cancel`.
-2. **Missing Fleet Map:** Addressed in M11/M17: Full MapLibre GL map deployed in `apps/admin-web/` and served at `/console` with live GPS markers and OSRM routing.
+2. **Missing Fleet Map:** Addressed in M11/M17/M19: MapLibre GL map deployed in `apps/admin-web/` at `/console`, and Leaflet OSM maps deployed in native Citizen and Driver applications with real OSRM routing.
 3. **SMS Inbound Incompatibility:** Addressed in M16: Compact Base36 protocol (`smsProtocol.ts`) unified across client and server with CRC-8 error detection and zero hardcoded payloads.
+4. **Mobile Runtime Map:** Addressed in M19: `docs/MOBILE_RUNTIME_MAP.md` declares native `apps/citizen-app` and `apps/driver-app` as canonical production applications.
