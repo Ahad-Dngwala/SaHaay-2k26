@@ -508,11 +508,19 @@ export function cancelMissionByPatient(
   return { ok: true };
 }
 
+function clearExpansionTimer(missionId: string): void {
+  const timerItem = state.expansionTimers.get(missionId);
+  if (timerItem) {
+    clearTimeout(timerItem.timer);
+    state.expansionTimers.delete(missionId);
+  }
+}
+
 // ── Breakdown & Re-Dispatch ───────────────────────────────────────────────────
 
 export function reportBreakdown(missionId: string, ambulanceId: string): void {
   const m = state.missions.get(missionId);
-  if (!m || m.assignedAmbulanceId !== ambulanceId) return;
+  if (!m || m.assignedAmbulanceId !== ambulanceId || m.status !== 'ASSIGNED') return;
 
   clearOfferTimers(missionId);
   stallTrackers.delete(ambulanceId);
@@ -766,16 +774,27 @@ export function checkStallConditions(simulatedNowMs?: number): void {
 
 // ── Status Updates ────────────────────────────────────────────────────────────
 
+const TERMINAL_STATUSES: MissionStatus[] = ['COMPLETED', 'FAILED', 'CANCELLED', 'CANCELLED_BY_PATIENT'];
+
 export function updateMissionStatus(missionId: string, status: MissionStatus): Mission | null {
   const m = state.missions.get(missionId);
   if (!m) return null;
+  if (TERMINAL_STATUSES.includes(m.status)) return null;
+
+  if (TERMINAL_STATUSES.includes(status)) {
+    clearOfferTimers(missionId);
+    clearExpansionTimer(missionId);
+  }
+
   const updated = updateMission(missionId, { status });
   auditLog('MISSION_STATUS', { missionId, status });
   broadcastToMission(missionId, { type: 'MISSION_STATUS', missionId, status });
 
-  if (status === 'COMPLETED') {
+  if (status === 'COMPLETED' || status === 'CANCELLED' || status === 'CANCELLED_BY_PATIENT') {
     const ambu = m.assignedAmbulanceId ? state.ambulances.get(m.assignedAmbulanceId) : undefined;
-    if (ambu) state.ambulances.set(ambu.id, { ...ambu, status: 'AVAILABLE' });
+    if (ambu && ambu.status !== 'OUT_OF_SERVICE') {
+      state.ambulances.set(ambu.id, { ...ambu, status: 'AVAILABLE' });
+    }
   }
 
   return updated;

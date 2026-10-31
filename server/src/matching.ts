@@ -73,21 +73,23 @@ export class SpatialGrid {
    */
   query(lat: number, lon: number, radiusM: number): Array<{ id: string; distM: number }> {
     const latDelta = (radiusM / R_M) * (180 / Math.PI);
-    const lonDelta = latDelta / Math.cos(lat * Math.PI / 180);
-    const latCells = Math.ceil(latDelta / CELL_DEG) + 1;
-    const lonCells = Math.ceil(lonDelta / CELL_DEG) + 1;
+    const cosLat = Math.max(0.01, Math.cos(lat * Math.PI / 180));
+    const lonDelta = latDelta / cosLat;
     const minLatCell = Math.floor((lat - latDelta) / CELL_DEG);
+    const maxLatCell = Math.floor((lat + latDelta) / CELL_DEG);
     const minLonCell = Math.floor((lon - lonDelta) / CELL_DEG);
+    const maxLonCell = Math.floor((lon + lonDelta) / CELL_DEG);
 
     const candidates: Array<{ id: string; distM: number }> = [];
 
-    for (let i = -1; i <= latCells + 1; i++) {
-      for (let j = -1; j <= lonCells + 1; j++) {
-        const key = `${minLatCell + i},${minLonCell + j}`;
+    for (let cLat = minLatCell; cLat <= maxLatCell; cLat++) {
+      for (let cLon = minLonCell; cLon <= maxLonCell; cLon++) {
+        const key = `${cLat},${cLon}`;
         const cell = this.cells.get(key);
         if (!cell) continue;
         for (const id of cell) {
-          const pos = this.positions.get(id)!;
+          const pos = this.positions.get(id);
+          if (!pos) continue;
           const distM = haversineM(lat, lon, pos.lat, pos.lon);
           if (distM <= radiusM) {
             candidates.push({ id, distM });

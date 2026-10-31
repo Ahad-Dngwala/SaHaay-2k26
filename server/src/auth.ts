@@ -34,6 +34,9 @@ export function generateToken(role: 'citizen' | 'driver' | 'admin', userId: stri
     `);
     stmt.run(session.token, session.role, session.userId, session.expiresAt, Date.now());
   } catch (err) {
+    if (process.env.NODE_ENV === 'production') {
+      throw err;
+    }
     // Graceful fallback to in-memory store in unit test environments
   }
 
@@ -146,4 +149,16 @@ export function loginAdmin(email: string, pass: string): { token: string; user: 
     return { token: session.token, user: { email, name: 'State Emergency Controller' } };
   }
   return null;
+}
+
+export function cleanupExpiredSessions(): void {
+  const now = Date.now();
+  for (const [token, session] of memorySessions.entries()) {
+    if (now > session.expiresAt) {
+      memorySessions.delete(token);
+    }
+  }
+  try {
+    db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
+  } catch {}
 }

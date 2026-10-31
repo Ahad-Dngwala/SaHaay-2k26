@@ -74,23 +74,26 @@ export function seedAmbulances(): void {
     const id = `AMB-${String(i + 1).padStart(2, '0')}`;
     state.ambulances.set(id, { id, ...ambu });
 
-    // Seed verified driver credentials into storage
-    storage.saveDriver({
-      id,
-      name: ambu.driverName,
-      phone: `98765000${String(i + 1).padStart(2, '0')}`,
-      licenseNo: `DL-GJ01-${2020000 + i}`,
-      vehicleNo: ambu.vehicleNo,
-      ambulanceType: 'ALS',
-      isVerified: true,
-      verificationStatus: 'VERIFIED',
-      isOnDuty: true,
-      currentLat: ambu.lat,
-      currentLon: ambu.lon,
-      heading: ambu.heading,
-      speedKmh: ambu.speedKmh,
-      createdAt: 1704067200000,
-    });
+    // Seed verified driver credentials into storage if not already present
+    const existing = storage.getDriver(id);
+    if (!existing) {
+      storage.saveDriver({
+        id,
+        name: ambu.driverName,
+        phone: `98765000${String(i + 1).padStart(2, '0')}`,
+        licenseNo: `DL-GJ01-${2020000 + i}`,
+        vehicleNo: ambu.vehicleNo,
+        ambulanceType: 'ALS',
+        isVerified: true,
+        verificationStatus: 'VERIFIED',
+        isOnDuty: true,
+        currentLat: ambu.lat,
+        currentLon: ambu.lon,
+        heading: ambu.heading,
+        speedKmh: ambu.speedKmh,
+        createdAt: 1704067200000,
+      });
+    }
   });
   console.log(`🌱 Seeded ${state.ambulances.size} ambulances and verified drivers across Ahmedabad`);
 }

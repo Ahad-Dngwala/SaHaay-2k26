@@ -2,6 +2,7 @@ package org.sahaay.citizen;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -30,6 +31,40 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void handleCrashAlertIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("crash_countdown") && webView != null) {
+            int countdown = intent.getIntExtra("crash_countdown", 30);
+            double peakG = intent.getDoubleExtra("peak_g", 0.0);
+            webView.evaluateJavascript(
+                "window.triggerCrashAlertModal && window.triggerCrashAlertModal(" + countdown + ", " + peakG + ");",
+                null
+            );
+        }
+    }
+
+    private static class CitizenWebViewClient extends WebViewClient {
+        private final MainActivity activity;
+
+        CitizenWebViewClient(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            if (activity != null) {
+                activity.handleCrashAlertIntent(activity.getIntent());
+            }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleCrashAlertIntent(intent);
+    }
+
     @Override
     @SuppressLint("SetJavaScriptEnabled")
     @SuppressWarnings("deprecation")
@@ -52,7 +87,7 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new CitizenWebViewClient(this));
         webView.setWebChromeClient(new WebChromeClient());
 
         SaHaayCitizenBridge bridge = new SaHaayCitizenBridge(this);

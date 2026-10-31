@@ -89,8 +89,12 @@ public class CrashDetector {
                     if (duration >= shakeSustainMs) {
                         phase = PHASE_CRASH_CONFIRMED;
                         double peak = impactPeakG;
-                        for (CrashListener l : listeners) l.onCrashConfirmed(peak);
                         reset();
+                        for (CrashListener l : listeners) {
+                            try {
+                                l.onCrashConfirmed(peak);
+                            } catch (Exception ignored) {}
+                        }
                         return true;
                     }
                 }
@@ -142,8 +146,12 @@ public class CrashDetector {
                 if ((max - min) < STILLNESS_G_DELTA && max < 1.5) {
                     phase = PHASE_CRASH_CONFIRMED;
                     double peak = impactPeakG;
-                    for (CrashListener l : listeners) l.onCrashConfirmed(peak);
                     reset();
+                    for (CrashListener l : listeners) {
+                        try {
+                            l.onCrashConfirmed(peak);
+                        } catch (Exception ignored) {}
+                    }
                     return true;
                 }
             }

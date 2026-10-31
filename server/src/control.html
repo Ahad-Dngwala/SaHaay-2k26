@@ -110,8 +110,19 @@
   let ws;
   const corridorMap = new Map();
 
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function connect() {
-    ws = new WebSocket(`ws://${window.location.host}?role=control`);
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${wsProto}//${window.location.host}?role=control`);
     ws.onopen = () => {
       document.getElementById('conn-dot').className = 'conn-dot connected';
       document.getElementById('conn-status').textContent = 'Connected';
@@ -149,17 +160,17 @@
     tbody.innerHTML = missions.map(m => {
       let ambuCol = '—';
       if (m.assignedAmbulanceId) {
-        ambuCol = `<strong style="color:var(--green)"><i class="bi bi-truck me-1"></i> ${m.assignedAmbulanceId}</strong>`;
+        ambuCol = `<strong style="color:var(--green)"><i class="bi bi-truck me-1"></i> ${esc(m.assignedAmbulanceId)}</strong>`;
       } else if (m.pendingOffers && m.pendingOffers.length) {
-        ambuCol = `<span style="color:var(--yellow)"><i class="bi bi-clock me-1"></i> Offered: ${m.pendingOffers.join(', ')}</span>`;
+        ambuCol = `<span style="color:var(--yellow)"><i class="bi bi-clock me-1"></i> Offered: ${m.pendingOffers.map(esc).join(', ')}</span>`;
       } else {
         ambuCol = `<span style="color:var(--muted)">Expanding search ring...</span>`;
       }
 
       return `
         <tr>
-          <td class="mono"><strong>#${m.id}</strong></td>
-          <td><span class="badge ${m.status.toLowerCase()}">${m.status}</span></td>
+          <td class="mono"><strong>#${esc(m.id)}</strong></td>
+          <td><span class="badge ${esc(m.status.toLowerCase())}">${esc(m.status)}</span></td>
           <td>${(m.currentRadiusM/1000).toFixed(1)} km</td>
           <td>${ambuCol}</td>
           <td class="mono">${new Date(m.updatedAt).toLocaleTimeString()}</td>
@@ -171,10 +182,10 @@
     const tbody = document.getElementById('ambulances-body');
     tbody.innerHTML = ambus.map(a => `
       <tr>
-        <td class="mono">${a.id}</td>
-        <td>${a.driverName}</td>
-        <td>${a.zone}</td>
-        <td><span class="badge ${a.status.toLowerCase()}">${a.status}</span></td>
+        <td class="mono">${esc(a.id)}</td>
+        <td>${esc(a.driverName)}</td>
+        <td>${esc(a.zone)}</td>
+        <td><span class="badge ${esc(a.status.toLowerCase())}">${esc(a.status)}</span></td>
       </tr>`).join('');
   }
 
@@ -182,7 +193,7 @@
     document.getElementById('audit-count').textContent = `(${entries.length} entries)`;
     const log = document.getElementById('log');
     log.innerHTML = entries.slice(-30).reverse().map(e =>
-      `<div>[${new Date(e.timestamp).toLocaleTimeString()}] <strong>${e.event}</strong> ${JSON.stringify(e.data).slice(0,80)}</div>`
+      `<div>[${new Date(e.timestamp).toLocaleTimeString()}] <strong>${esc(e.event)}</strong> ${esc(JSON.stringify(e.data).slice(0,80))}</div>`
     ).join('');
   }
 

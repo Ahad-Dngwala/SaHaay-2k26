@@ -63,6 +63,7 @@ function crc8(input: string): string {
 }
 
 function decodeSmsToken(raw: string): { ok: true; uid: string; lat: number; lon: number; ts: number; addrId: number; flags: number } | { ok: false; reason: string } {
+  if (!raw || typeof raw !== 'string') return { ok: false, reason: 'empty input' };
   const s = raw.trim();
   if (!s || s.length > 160 || /[^\x20-\x7e]/.test(s)) return { ok: false, reason: 'invalid format' };
   const lastPipe = s.lastIndexOf('|');
@@ -72,12 +73,18 @@ function decodeSmsToken(raw: string): { ok: true; uid: string; lat: number; lon:
   if (crc8(body) !== crc) return { ok: false, reason: 'CRC mismatch' };
   const f = body.split('|');
   if (f.length !== 7 || f[0] !== 'S1') return { ok: false, reason: 'malformed' };
+  if (!/^[0-9a-z]+$/i.test(f[2]) || !/^[0-9a-z]+$/i.test(f[3]) || !/^[0-9a-z]+$/i.test(f[4]) || !/^[0-9a-z]+$/i.test(f[5]) || !/^[0-9a-z]+$/i.test(f[6])) {
+    return { ok: false, reason: 'non-base36 characters in fields' };
+  }
   try {
     const lat    = parseInt(f[2], 36) / 1e5 - 90;
     const lon    = parseInt(f[3], 36) / 1e5 - 180;
     const ts     = parseInt(f[4], 36);
     const addrId = parseInt(f[5], 36);
     const flags  = parseInt(f[6], 36);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(ts) || !Number.isFinite(addrId) || !Number.isFinite(flags)) {
+      return { ok: false, reason: 'non-finite decoded values' };
+    }
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return { ok: false, reason: 'coords out of range' };
     return { ok: true, uid: f[1], lat, lon, ts, addrId, flags };
   } catch (e) {
@@ -353,6 +360,10 @@ export function createRouter(): Router {
     const { lat, lon, heading, speedKmh } = req.body as { lat: number; lon: number; heading?: number; speedKmh?: number };
     const ambu = state.ambulances.get(id);
     if (!ambu) { res.status(404).json({ error: 'ambulance not found' }); return; }
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      res.status(400).json({ error: 'valid lat [-90, 90] and lon [-180, 180] required' });
+      return;
+    }
     const updated = { ...ambu, lat, lon, ...(heading !== undefined ? { heading } : {}), ...(speedKmh !== undefined ? { speedKmh } : {}) };
     state.ambulances.set(id, updated);
     syncGrid(state.ambulances);
@@ -546,6 +557,10 @@ export function createRouter(): Router {
 
   router.patch('/missions/:id/patient-location', (req: Request, res: Response) => {
     const { lat, lon } = req.body as { lat: number; lon: number };
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      res.status(400).json({ error: 'valid lat [-90, 90] and lon [-180, 180] required' });
+      return;
+    }
     updatePatientLocation(req.params.id, lat, lon);
     res.json({ ok: true });
   });
@@ -619,8 +634,8 @@ export function createRouter(): Router {
   });
 
   router.post('/sms/inbound', (req: Request, res: Response) => {
-    const rawToken: string = (req.body.token ?? req.body.Body ?? '').trim();
-    const senderPhone: string = (req.body.From ?? req.body.sender ?? req.body.from ?? '').trim();
+    const rawToken: string = (typeof req.body?.token === 'string' ? req.body.token : (typeof req.body?.Body === 'string' ? req.body.Body : '')).trim();
+    const senderPhone: string = (typeof req.body?.From === 'string' ? req.body.From : (typeof req.body?.sender === 'string' ? req.body.sender : (typeof req.body?.from === 'string' ? req.body.from : ''))).trim();
     if (!rawToken) { res.status(400).json({ error: 'token required (JSON: {token} or form: Body=)' }); return; }
 
     // Parse packet via unified smsProtocol
@@ -687,17 +702,31 @@ export function createRouter(): Router {
           return;
         }
 
+        let matchedAmbuId: string | undefined;
+        if (senderPhone) {
+          const driver = storage.getDriverByPhone(senderPhone);
+          if (driver && driver.id) {
+            matchedAmbuId = driver.id;
+          }
+        }
+
         // Driver accept action
         if (packet.action === 'ACC') {
-          const ambId = m.pendingOffers[0] || m.assignedAmbulanceId || 'amb-1';
+          const ambId = matchedAmbuId || m.pendingOffers[0] || m.assignedAmbulanceId;
+          if (!ambId) {
+            res.status(400).json({ ok: false, error: 'No matching ambulance or active offer' });
+            return;
+          }
           const result = acceptMission(m.id, ambId);
           res.json({ ok: result.won, missionId: m.id, action: 'ACC', won: result.won });
           return;
         }
 
         if (packet.action === 'DEC') {
-          const ambId = m.pendingOffers[0] || 'amb-1';
-          declineMission(m.id, ambId);
+          const ambId = matchedAmbuId || m.pendingOffers[0];
+          if (ambId) {
+            declineMission(m.id, ambId);
+          }
           res.json({ ok: true, missionId: m.id, action: 'DEC' });
           return;
         }
@@ -716,7 +745,11 @@ export function createRouter(): Router {
 
       case 'X1': {
         auditLog('SMS_INBOUND_X1', { missionId: packet.missionId, reasonCode: packet.reasonCode });
-        cancelMissionByPatient(packet.missionId, `SMS cancellation: ${packet.reasonCode}`);
+        const result = cancelMissionByPatient(packet.missionId, `SMS cancellation: ${packet.reasonCode}`);
+        if (!result.ok) {
+          res.status(400).json({ ok: false, error: result.error || 'Cannot cancel mission' });
+          return;
+        }
         res.json({ ok: true, missionId: packet.missionId, cancelled: true });
         return;
       }
@@ -747,30 +780,38 @@ export function createRouter(): Router {
 
   // ── Real Routing & ETA ───────────────────────────────────────────────────────
   router.post('/api/routes/directions', async (req: Request, res: Response) => {
-    const { origin, destination } = req.body as {
-      origin?: { lat: number; lon: number };
-      destination?: { lat: number; lon: number };
-    };
-    if (!origin || !destination || origin.lat === undefined || destination.lat === undefined) {
-      res.status(400).json({ error: 'origin and destination with lat/lon required' });
-      return;
+    try {
+      const { origin, destination } = req.body as {
+        origin?: { lat: number; lon: number };
+        destination?: { lat: number; lon: number };
+      };
+      if (!origin || !destination || !Number.isFinite(origin.lat) || !Number.isFinite(origin.lon) || !Number.isFinite(destination.lat) || !Number.isFinite(destination.lon)) {
+        res.status(400).json({ error: 'valid origin and destination with numeric lat/lon required' });
+        return;
+      }
+      const route = await defaultRoutingProvider.getRoute(origin, destination);
+      res.json(route);
+    } catch (err) {
+      res.status(500).json({ error: 'Routing failed: ' + (err as Error).message });
     }
-    const route = await defaultRoutingProvider.getRoute(origin, destination);
-    res.json(route);
   });
 
   router.post('/api/routes/nearest-hospital', async (req: Request, res: Response) => {
-    const { location } = req.body as { location?: { lat: number; lon: number } };
-    if (!location || location.lat === undefined || location.lon === undefined) {
-      res.status(400).json({ error: 'location with lat/lon required' });
-      return;
+    try {
+      const { location } = req.body as { location?: { lat: number; lon: number } };
+      if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lon)) {
+        res.status(400).json({ error: 'location with numeric lat/lon required' });
+        return;
+      }
+      const result = await findNearestHospital(location);
+      if (!result) {
+        res.status(404).json({ error: 'No hospitals available' });
+        return;
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: 'Nearest hospital lookup failed: ' + (err as Error).message });
     }
-    const result = await findNearestHospital(location);
-    if (!result) {
-      res.status(404).json({ error: 'No hospitals available' });
-      return;
-    }
-    res.json(result);
   });
   // ── Audit Log ───────────────────────────────────────────────────────────────
   router.get('/audit', (_req: Request, res: Response) => {

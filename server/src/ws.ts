@@ -38,6 +38,9 @@ export function initWss(wss: WebSocketServer): void {
     } else if (role === 'driver' && process.env.NODE_ENV !== 'test') {
       ws.close(4401, 'Driver role requires authentication token');
       return;
+    } else if (!token && ambulanceId && process.env.NODE_ENV !== 'test') {
+      ws.close(4401, 'Claiming ambulanceId requires authentication token');
+      return;
     }
 
     clients.set(ws, { role, missionId, ambulanceId });

@@ -23,8 +23,9 @@ export function auditLog(event: string, data: unknown = {}): AuditEntry {
   const timestamp = Date.now();
   const index = state.audit.length;
   const prevHash = index === 0 ? GENESIS_HASH : state.audit[index - 1].hash;
-  const hash = computeHash(prevHash, timestamp, event, data);
-  const entry: AuditEntry = { index, timestamp, event, data, prevHash, hash };
+  const dataSnapshot = JSON.parse(JSON.stringify(data ?? {}));
+  const hash = computeHash(prevHash, timestamp, event, dataSnapshot);
+  const entry: AuditEntry = { index, timestamp, event, data: dataSnapshot, prevHash, hash };
   state.audit.push(entry);
   return entry;
 }

@@ -85,3 +85,4 @@ To adhere strictly to the foundational architectural requirement of **two separa
    - `apps/driver-app/assets/`
    and packaged into APKs via `scripts/build-apk.ps1`.
 4. `mobile-app/` is retained strictly as a browser-based multi-role companion preview, but all fake quick-assignments, fabricated network success responses, and hardcoded identities are expunged to prevent architectural drift.
+

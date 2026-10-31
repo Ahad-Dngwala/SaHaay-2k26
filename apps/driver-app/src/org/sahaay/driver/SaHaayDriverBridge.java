@@ -87,7 +87,9 @@ public class SaHaayDriverBridge {
     @SuppressWarnings("deprecation")
     public void vibrate(long milliseconds) {
         try {
-            Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            Vibrator v = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    ? context.getSystemService(Vibrator.class)
+                    : (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null && v.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     v.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));

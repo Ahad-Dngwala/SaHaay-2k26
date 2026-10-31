@@ -29,6 +29,7 @@ import android.util.Log;
  * Listens to Accelerometer and Gyroscope with partial wake lock.
  * Dispatches full-screen alert notification on impact detection.
  */
+@SuppressWarnings("deprecation")
 public class CrashMonitorService extends Service implements SensorEventListener, CrashDetector.CrashListener, Runnable {
     private static final String TAG = "CrashMonitorService";
     private static final String CHANNEL_ID = "sahaay_crash_monitor_channel";
@@ -317,6 +318,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
                 .setContentTitle("CRASH DETECTED — SOS in " + seconds + "s")
                 .setContentText(String.format("Impact peak: %.1fg. Tap CANCEL if you are safe.", peakG))
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentIntent(fullScreenPendingIntent)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setOngoing(true)
                 .build();

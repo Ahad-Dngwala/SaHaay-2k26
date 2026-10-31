@@ -94,8 +94,14 @@ export class CrashDetector {
           if (duration >= this.shakeSustainMs) {
             this.state.phase = 'CRASH_CONFIRMED';
             const peak = this.state.impactPeakG;
-            for (const cb of this.callbacks) cb(peak);
             this.reset();
+            for (const cb of this.callbacks) {
+              try {
+                cb(peak);
+              } catch (err) {
+                console.error('Error in crash callback:', err);
+              }
+            }
             return true;
           }
         }
@@ -146,8 +152,14 @@ export class CrashDetector {
           // Still — crash confirmed
           this.state.phase = 'CRASH_CONFIRMED';
           const peak = this.state.impactPeakG;
-          for (const cb of this.callbacks) cb(peak);
           this.reset();
+          for (const cb of this.callbacks) {
+            try {
+              cb(peak);
+            } catch (err) {
+              console.error('Error in crash callback:', err);
+            }
+          }
           return true;
         }
       }

@@ -17,7 +17,7 @@ const serverEntry = fs.existsSync(path.join(__dirname, '..', 'server', 'dist', '
 console.log(`🚀 Starting smoke test on port ${PORT} using ${serverEntry}...`);
 
 const isTs = serverEntry.endsWith('.ts');
-const cmd = isTs ? (process.platform === 'win32' ? 'npx.cmd' : 'npx') : 'node';
+const cmd = isTs ? (process.platform === 'win32' ? 'npx.cmd' : 'npx') : process.execPath;
 const args = isTs ? ['ts-node', serverEntry] : [serverEntry];
 
 const serverProc = spawn(cmd, args, {

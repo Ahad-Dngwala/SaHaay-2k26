@@ -77,6 +77,7 @@ export class TransportManager {
   private state: TransportManagerState;
   private outbox: Map<string, OutboxItem> = new Map();
   private listeners: Array<(s: TransportManagerState) => void> = [];
+  private isDraining = false;
 
   constructor(
     private httpTransport: Transport,
@@ -163,26 +164,32 @@ export class TransportManager {
   }
 
   private async _drainOutbox(): Promise<void> {
-    if (this.outbox.size === 0) {
-      this._transition({ type: 'OUTBOX_DRAINED' });
-      return;
-    }
-    const now = Date.now();
-    for (const [id, item] of this.outbox.entries()) {
-      if (item.nextRetryAt > now) continue;
-      try {
-        await this.httpTransport.send(item.msg);
-        this.outbox.delete(id);
-        this._transition({ type: 'HTTP_SUCCESS' });
-      } catch {
-        item.attempts++;
-        const backoff = Math.min(BACKOFF_BASE_MS * 2 ** item.attempts, BACKOFF_MAX_MS);
-        item.nextRetryAt = Date.now() + backoff;
-        this._transition({ type: 'HTTP_FAILURE' });
+    if (this.isDraining) return;
+    this.isDraining = true;
+    try {
+      if (this.outbox.size === 0) {
+        this._transition({ type: 'OUTBOX_DRAINED' });
+        return;
       }
-    }
-    if (this.outbox.size === 0) {
-      this._transition({ type: 'OUTBOX_DRAINED' });
+      const now = Date.now();
+      for (const [id, item] of this.outbox.entries()) {
+        if (item.nextRetryAt > now) continue;
+        try {
+          await this.httpTransport.send(item.msg);
+          this.outbox.delete(id);
+          this._transition({ type: 'HTTP_SUCCESS' });
+        } catch {
+          item.attempts++;
+          const backoff = Math.min(BACKOFF_BASE_MS * 2 ** item.attempts, BACKOFF_MAX_MS);
+          item.nextRetryAt = Date.now() + backoff;
+          this._transition({ type: 'HTTP_FAILURE' });
+        }
+      }
+      if (this.outbox.size === 0) {
+        this._transition({ type: 'OUTBOX_DRAINED' });
+      }
+    } finally {
+      this.isDraining = false;
     }
   }
 }
