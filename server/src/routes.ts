@@ -108,7 +108,7 @@ export function createRouter(): Router {
 
   // ── Root & Index ─────────────────────────────────────────────────────────────
   router.get('/', (_req: Request, res: Response) => {
-    res.redirect('/control');
+    res.redirect('/console');
   });
 
   // ── Health ──────────────────────────────────────────────────────────────────

@@ -33,6 +33,16 @@ if (!fs.existsSync(apkDir)) {
 }
 app.use('/downloads', express.static(apkDir));
 
+// ── Web Console (React app at apps/admin-web/dist) ─────────────────────────
+const adminDist = path.join(__dirname, '../../apps/admin-web/dist');
+if (fs.existsSync(adminDist)) {
+  app.use('/console', express.static(adminDist));
+  app.use('/admin', express.static(adminDist));
+  app.get(['/console', '/console/*', '/admin', '/admin/*'], (_req, res) => {
+    res.sendFile(path.join(adminDist, 'index.html'));
+  });
+}
+
 // ── Control Dashboard (served at /control) ────────────────────────────────────
 app.get('/control', (_req, res) => {
   res.sendFile(path.join(__dirname, 'control.html'));
@@ -42,7 +52,6 @@ app.get('/control', (_req, res) => {
 app.get('/sos', (_req, res) => {
   res.sendFile(path.join(__dirname, 'sos.html'));
 });
-
 
 // ── API routes ────────────────────────────────────────────────────────────────
 app.use('/', createRouter());
@@ -58,10 +67,11 @@ auditLog('SERVER_STARTED', { version: '1.0.0', port: Config.SERVER_PORT });
 
 server.listen(Config.SERVER_PORT, () => {
   console.log(`\n🚑 SaHaay Dispatch Server`);
-  console.log(`   REST API: http://localhost:${Config.SERVER_PORT}/`);
-  console.log(`   Control:  http://localhost:${Config.SERVER_PORT}/control`);
-  console.log(`   Health:   http://localhost:${Config.SERVER_PORT}/health`);
-  console.log(`   SMS in:   POST http://localhost:${Config.SERVER_PORT}/sms/inbound`);
+  console.log(`   Web Console: http://localhost:${Config.SERVER_PORT}/console`);
+  console.log(`   REST API:    http://localhost:${Config.SERVER_PORT}/`);
+  console.log(`   Control:     http://localhost:${Config.SERVER_PORT}/control`);
+  console.log(`   Health:      http://localhost:${Config.SERVER_PORT}/health`);
+  console.log(`   SMS in:      POST http://localhost:${Config.SERVER_PORT}/sms/inbound`);
   console.log(`\n   ${state.ambulances.size} ambulances seeded across Ahmedabad\n`);
 });
 

@@ -1,6 +1,6 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M16 Real SMS Fallback Completed)
+## SESSION: 2026-10-31 (M17 Consolidated Web Console Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
@@ -9,14 +9,10 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 
 ---
 
-## NEXT: M17 — Consolidated Web Console (`/console`)
-1. **Unified Dashboard (`/console`):** Consolidate `control.html`, `sos.html`, and legacy admin into one production React console with role-based views:
-   - **Operator:** Real MapLibre live map, mission timeline, manual overrides (reassign, expand ring, cancel).
-   - **Traffic Authority:** Scoped division view with real-time signal advisory pre-clearance cards.
-   - **Admin:** Driver verification review, authority CRUD, news/announcement feed broadcast.
-   - **Dev Tools (hidden in prod):** Speed scale, tamper injector, blackout probe toggle.
-2. **Citizen Web Fallback:** Keep a lightweight web client at `/sos` (browser geolocation + real `encodeS1`) as fallback for non-app users.
-3. **End-to-End Verification:** Ensure all console views consume live server REST & WebSocket state.
+## NEXT: M18 — Hardening, Docs Update & 7-Step Demo Run
+1. **Benchmark execution:** Measure latency and throughput on the real stack (`npm run bench` or equivalent script), recording real numbers without simulation.
+2. **Docs synchronisation:** Update `docs/CLAIMS_MATRIX.md`, `docs/ARCHITECTURE.md`, `docs/DEVICE_TEST.md`, and `docs/BENCHMARK.md` to reflect the 100% real implementation.
+3. **Demo Script Walkthrough:** Verify the 7 acceptance steps from `REAL_PROTOTYPE_SPEC.md` Section 12 on device and emulator.
 
 ---
 
@@ -88,6 +84,15 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 - [x] Implemented Driver app in-app Gateway mode with `ForwardSmsHttpTask` for two-phone live blackout demos without 3rd-party SaaS dependencies.
 - [x] Added automated test suite `server/src/sms-fallback.test.ts`.
 - [x] 87 / 87 automated tests passing across 12 test suites (`npm test`).
+
+### M17: Consolidated Web Console
+- [x] Integrated unified React Web Console served at `/console` and `/admin` from compiled `apps/admin-web/dist`.
+- [x] Configured server root `/` redirect to `/console`.
+- [x] Operator control room: Live MapLibre GPS map with real hospital routing, active mission timeline, and real-time fleet state.
+- [x] Driver Verification review and Citizen accounts inspection.
+- [x] News & Alerts Publishing CMS with severity targeting and push broadcast.
+- [x] APK Release Manager serving signed native APK downloads (`/downloads/SaHaay-Citizen.apk`, `/downloads/SaHaay-Driver.apk`).
+- [x] Cryptographic SHA-256 tamper-evident audit log inspector.
 - [x] Native APKs recompiled, signed, and verified installed on `emulator-5554`.
 - [x] Zero issues in `scripts/reality-check.js` and clean TypeScript (`npx tsc --noEmit`).
 
