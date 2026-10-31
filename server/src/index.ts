@@ -36,6 +36,9 @@ app.use('/downloads', express.static(apkDir));
 // ── Web Console (React app at apps/admin-web/dist) ─────────────────────────
 const adminDist = path.join(__dirname, '../../apps/admin-web/dist');
 if (fs.existsSync(adminDist)) {
+  app.use('/assets', express.static(path.join(adminDist, 'assets')));
+  app.use('/console/assets', express.static(path.join(adminDist, 'assets')));
+  app.use('/admin/assets', express.static(path.join(adminDist, 'assets')));
   app.use('/console', express.static(adminDist));
   app.use('/admin', express.static(adminDist));
   app.get(['/console', '/console/*', '/admin', '/admin/*'], (_req, res) => {

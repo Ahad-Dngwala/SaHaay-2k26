@@ -19,7 +19,8 @@ public class SmsReceiver extends BroadcastReceiver {
         }
 
         SmsMessage[] messages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
-        if (messages == null || messages.length == 0) return;
+        if (messages == null || messages.length == 0)
+            return;
 
         StringBuilder fullMessage = new StringBuilder();
         String sender = "";
@@ -37,14 +38,15 @@ public class SmsReceiver extends BroadcastReceiver {
         Log.i(TAG, "Driver SMS Received from " + sender + ": " + body);
 
         if (body.startsWith("S1|") || body.startsWith("A1|") || body.startsWith("T1|") ||
-            body.startsWith("O1|") || body.startsWith("D1|") || body.startsWith("X1|")) {
+                body.startsWith("O1|") || body.startsWith("D1|") || body.startsWith("X1|")) {
             lastReceivedMessage = body;
             lastReceivedSender = sender;
 
             // Deliver to Driver webview
             MainActivity.onSmsPacketReceived(sender, body);
 
-            // If in Gateway mode and received citizen SOS (S1) or telemetry (D1), forward to server
+            // If in Gateway mode and received citizen SOS (S1) or telemetry (D1), forward
+            // to server
             if (SaHaayDriverBridge.isGatewayModeEnabled() && (body.startsWith("S1|") || body.startsWith("D1|"))) {
                 new ForwardSmsHttpTask(context, sender, body).execute();
             }
