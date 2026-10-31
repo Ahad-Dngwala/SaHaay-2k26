@@ -15,7 +15,8 @@
   },
   "license": "FSL-1.1-ALv2",
   "workspaces": [
-    "server"
+    "server",
+    "packages/*"
   ],
   "devDependencies": {
     "@types/jest": "^29.5.12",
