@@ -1,12 +1,14 @@
 package org.sahaay.driver;
 
 import android.content.Context;
+import android.os.Build;
 import android.telephony.SmsManager;
 import android.util.Log;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -27,6 +29,7 @@ public class ForwardSmsHttpTask implements Runnable {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void run() {
         HttpURLConnection conn = null;
         try {
@@ -38,7 +41,7 @@ public class ForwardSmsHttpTask implements Runnable {
                 serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
             }
 
-            URL url = new URL(serverUrl + "/sms/inbound");
+            URL url = URI.create(serverUrl + "/sms/inbound").toURL();
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -75,9 +78,16 @@ public class ForwardSmsHttpTask implements Runnable {
                             if (end > idx) {
                                 String reply = responseBody.substring(idx + 12, end);
                                 if (!reply.isEmpty() && !senderPhone.isEmpty()) {
-                                    SmsManager sms = SmsManager.getDefault();
-                                    sms.sendTextMessage(senderPhone, null, reply, null, null);
-                                    Log.i(TAG, "Relayed reply SMS back to " + senderPhone + ": " + reply);
+                                    SmsManager sms;
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && context != null) {
+                                        sms = context.getSystemService(SmsManager.class);
+                                    } else {
+                                        sms = SmsManager.getDefault();
+                                    }
+                                    if (sms != null) {
+                                        sms.sendTextMessage(senderPhone, null, reply, null, null);
+                                        Log.i(TAG, "Relayed reply SMS back to " + senderPhone + ": " + reply);
+                                    }
                                 }
                             }
                         }
@@ -93,4 +103,3 @@ public class ForwardSmsHttpTask implements Runnable {
         }
     }
 }
-

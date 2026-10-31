@@ -33,12 +33,23 @@ public class SaHaayDriverBridge {
     }
 
     @JavascriptInterface
+    @SuppressWarnings("deprecation")
     public boolean sendSms(String phoneNumber, String message) {
         try {
-            SmsManager sms = SmsManager.getDefault();
-            sms.sendTextMessage(phoneNumber, null, message, null, null);
-            showToast("Driver SMS Sent via GSM");
-            return true;
+            SmsManager sms;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                sms = context.getSystemService(SmsManager.class);
+            } else {
+                sms = SmsManager.getDefault();
+            }
+            if (sms != null) {
+                sms.sendTextMessage(phoneNumber, null, message, null, null);
+                showToast("Driver SMS Sent via GSM");
+                return true;
+            } else {
+                showToast("SmsManager unavailable");
+                return false;
+            }
         } catch (Exception e) {
             showToast("SMS send error: " + e.getMessage());
             return false;

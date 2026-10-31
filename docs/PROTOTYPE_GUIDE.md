@@ -2,7 +2,7 @@
 
 **Document:** `docs/PROTOTYPE_GUIDE.md`  
 **Last Updated:** 2026-10-31  
-**Milestone:** M11 (Final Audit)
+**Milestone:** M18 (Master Prototype Hardening, Android SDK 34 Warnings Resolution & Reality Ledger Signoff)
 
 ---
 

@@ -110,6 +110,12 @@ Status: **ALL MILESTONES M10 THROUGH M18 COMPLETED & VERIFIED.**
 - [x] TypeScript clean (`npx tsc --noEmit`) and reality check clean (`node scripts/reality-check.js`).
 - [x] Native APKs recompiled, signed, and verified installed on `emulator-5554`.
 - [x] Zero issues in `scripts/reality-check.js` and clean TypeScript (`npx tsc --noEmit`).
+- [x] **Android Java Cleanliness Audit:** Resolved all 19 deprecation and lint warnings across both native apps:
+  - `CrashMonitorService.java`: modernized service lookups via `getSystemService(Class)`, updated foreground stoppage to `STOP_FOREGROUND_REMOVE`, integrated `Notification.Action.Builder` with `Icon.createWithResource`.
+  - `SaHaayCitizenBridge.java` & `SaHaayDriverBridge.java`: upgraded `SmsManager` retrieval to `context.getSystemService(SmsManager.class)` (API 31+) with `@SuppressWarnings("deprecation")` fallback.
+  - `SmsReceiver.java` (Citizen & Driver): replaced deprecated `bundle.get("pdus")` and `createFromPdu` with modern `android.provider.Telephony.Sms.Intents.getMessagesFromIntent(intent)`.
+  - `SosHttpTask.java` & `ForwardSmsHttpTask.java`: replaced deprecated `new URL(String)` with `URI.create(url).toURL()`.
+  - Recompiled both APKs via `scripts/build-apk.ps1` with 0 warnings in `javac -Xlint:deprecation -Xlint:unchecked`.
 
 ---
 

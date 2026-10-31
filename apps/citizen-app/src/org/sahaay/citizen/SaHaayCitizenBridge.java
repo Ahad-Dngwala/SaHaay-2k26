@@ -89,12 +89,23 @@ public class SaHaayCitizenBridge {
     }
 
     @JavascriptInterface
+    @SuppressWarnings("deprecation")
     public boolean sendSms(String phoneNumber, String message) {
         try {
-            android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
-            sms.sendTextMessage(phoneNumber, null, message, null, null);
-            showToast("SOS SMS sent via GSM");
-            return true;
+            android.telephony.SmsManager sms;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                sms = context.getSystemService(android.telephony.SmsManager.class);
+            } else {
+                sms = android.telephony.SmsManager.getDefault();
+            }
+            if (sms != null) {
+                sms.sendTextMessage(phoneNumber, null, message, null, null);
+                showToast("SOS SMS sent via GSM");
+                return true;
+            } else {
+                showToast("SmsManager unavailable");
+                return false;
+            }
         } catch (Exception e) {
             showToast("SMS send error: " + e.getMessage());
             return false;

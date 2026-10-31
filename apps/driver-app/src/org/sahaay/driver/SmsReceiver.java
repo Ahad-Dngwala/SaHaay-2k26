@@ -3,7 +3,7 @@ package org.sahaay.driver;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
+import android.provider.Telephony;
 import android.telephony.SmsMessage;
 import android.util.Log;
 
@@ -14,28 +14,17 @@ public class SmsReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!"android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())) {
+        if (!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())) {
             return;
         }
 
-        Bundle bundle = intent.getExtras();
-        if (bundle == null) return;
+        SmsMessage[] messages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
+        if (messages == null || messages.length == 0) return;
 
-        Object[] pdus = (Object[]) bundle.get("pdus");
-        if (pdus == null || pdus.length == 0) return;
-
-        String format = bundle.getString("format");
         StringBuilder fullMessage = new StringBuilder();
         String sender = "";
 
-        for (Object pdu : pdus) {
-            SmsMessage message;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                message = SmsMessage.createFromPdu((byte[]) pdu, format);
-            } else {
-                message = SmsMessage.createFromPdu((byte[]) pdu);
-            }
-
+        for (SmsMessage message : messages) {
             if (message != null) {
                 if (sender.isEmpty()) {
                     sender = message.getDisplayOriginatingAddress();
@@ -62,4 +51,3 @@ public class SmsReceiver extends BroadcastReceiver {
         }
     }
 }
-

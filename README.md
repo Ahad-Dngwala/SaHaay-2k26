@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/License-FSL--1.1--ALv2-blue?style=for-the-badge)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-59%20Passing-brightgreen?style=for-the-badge)
-![Bench](https://img.shields.io/badge/Matching-0.025ms-purple?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-87%20Passing-brightgreen?style=for-the-badge)
+![Bench](https://img.shields.io/badge/Matching-0.026ms-purple?style=for-the-badge)
 
 > **"No patient left waiting."**
 >
@@ -85,7 +85,7 @@ flowchart TD
   - **10,000 ambulances**: $p50 = 9.0\ \mu\text{s}$, $p99 = 0.025\text{ ms}$ at $500\text{ m}$.
   - *Full benchmark report: [docs/BENCHMARK.md](docs/BENCHMARK.md)*.
 - **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance (HTTP 200); any competing or late acceptances receive **HTTP 409 Conflict** and are cancelled.
-- **Simulated Driver Auto-Acceptance & Fast Ring Expansion**: When testing without physical driver devices, candidate ambulances automatically accept within 1.5s in demo mode. Instant ring expansion (`POST /missions/:id/expand`) and emergency quick-assignment (`POST /missions/:id/quick-assign`) allow immediate triage during demonstrations.
+- **Targeted Driver Dispatch & Fast Ring Expansion**: Offers are dispatched directly to the eligible driver's device via authenticated WebSocket (`sendToAmbulance`) or push notification. Configurable TTL timers handle progressive ripple ring expansion (500m $\to$ 8km) if a unit declines or times out.
 
 ### 2. 🛡️ Self-Healing Failover (Breakdown Protection)
 - When a breakdown is reported for an active ambulance:
@@ -169,7 +169,7 @@ Output signed release APKs:
 ```bash
 npm run typecheck    # Verifies TypeScript compiler across core and server (0 errors)
 npm run build:server # Builds production server to dist/
-npm test             # Runs test suite locally (59 tests across 7 suites)
+npm test             # Runs test suite locally (87 tests across 12 suites)
 npm run test:smoke   # Cross-platform runtime smoke test
 npm run bench        # Spatial grid benchmark (<200ms assertion on 10k fleet)
 ```
@@ -191,8 +191,13 @@ npm run bench        # Spatial grid benchmark (<200ms assertion on 10k fleet)
 - [x] **Self-Healing Failover to Live Patient GPS with Breakdown Coordinates Preserved**
 - [x] **Two Separate Standalone Signed Android APKs (`SaHaay-Citizen.apk`, `SaHaay-Driver.apk`)**
 - [x] **Central Public Portal & Authenticated Control Room (`apps/admin-web/`)**
-- [x] **59 / 59 Automated Tests Passing across 7 Test Suites**
-- [x] **Zero TypeScript Errors (`npx tsc --noEmit`)**
+- [x] **87 / 87 Automated Tests Passing across 12 Test Suites**
+- [x] **Zero TypeScript Errors (`npx tsc --noEmit`) and Zero Reality-Check Violations**
+- [x] **Real OSRM Road Routing Engine with Dynamic Nearest-Hospital Selection**
+- [x] **Real Background Crash Detection Foreground Service with Quick Settings Tile**
+- [x] **Real Route-Snapping Green Corridor Advisory Pre-Clearance (20 Ahmedabad Junctions)**
+- [x] **Native Android GSM-7 Base36 SMS Receiver & Driver Gateway Blackout Fallback**
+- [x] **19/19 Android Deprecations & Lints Cleaned Across Native App Codebases**
 
 ---
 

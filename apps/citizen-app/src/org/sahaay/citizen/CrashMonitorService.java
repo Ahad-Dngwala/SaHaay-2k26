@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Icon;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -55,16 +56,16 @@ public class CrashMonitorService extends Service implements SensorEventListener,
     @Override
     public void onCreate() {
         super.onCreate();
-        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        notificationManager = getSystemService(NotificationManager.class);
+        sensorManager = getSystemService(SensorManager.class);
+        vibrator = getSystemService(Vibrator.class);
         mainHandler = new Handler(Looper.getMainLooper());
 
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         }
 
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        PowerManager pm = getSystemService(PowerManager.class);
         if (pm != null) {
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SaHaay:CrashMonitorWakeLock");
         }
@@ -130,6 +131,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         Log.i(TAG, "Crash monitor armed in mode: " + modeName);
     }
 
+    @SuppressWarnings("deprecation")
     private void stopMonitoring() {
         if (!isArmed) return;
         isArmed = false;
@@ -147,7 +149,11 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         SharedPreferences prefs = getSharedPreferences("sahaay_prefs", Context.MODE_PRIVATE);
         prefs.edit().putBoolean("crash_monitor_armed", false).apply();
 
-        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
         Log.i(TAG, "Crash monitor disarmed");
     }
 
@@ -197,7 +203,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         double lon = 72.560;
 
         try {
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            LocationManager lm = getSystemService(LocationManager.class);
             if (lm != null) {
                 Location loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (loc == null) loc = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -212,6 +218,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         new Thread(new SosHttpTask(lat, lon)).start();
     }
 
+    @SuppressWarnings("deprecation")
     private void triggerVibrationAlert() {
         if (vibrator != null && vibrator.hasVibrator()) {
             long[] pattern = {0, 500, 200, 500, 200, 500};
@@ -236,6 +243,7 @@ public class CrashMonitorService extends Service implements SensorEventListener,
         }
     }
 
+    @SuppressWarnings("deprecation")
     private Notification buildMonitoringNotification() {
         Intent stopIntent = new Intent(this, CrashMonitorService.class);
         stopIntent.setAction(ACTION_STOP);
@@ -247,15 +255,27 @@ public class CrashMonitorService extends Service implements SensorEventListener,
                 : new Notification.Builder(this);
 
         String modeName = crashDetector.getMode() == CrashDetector.MODE_SUSTAINED_SHAKE ? "SUSTAINED_SHAKE" : "IMPACT";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Notification.Action disarmAction = new Notification.Action.Builder(
+                    Icon.createWithResource(this, android.R.drawable.ic_delete),
+                    "Disarm",
+                    stopPi
+            ).build();
+            builder.addAction(disarmAction);
+        } else {
+            builder.addAction(android.R.drawable.ic_delete, "Disarm", stopPi);
+        }
+
         return builder
                 .setContentTitle("SaHaay Crash Guard Active")
                 .setContentText("Monitoring in background (" + modeName + " mode)")
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .addAction(android.R.drawable.ic_delete, "Disarm", stopPi)
                 .setOngoing(true)
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     private void updateCountdownNotification(int seconds, double peakG) {
         Intent cancelIntent = new Intent(this, CrashMonitorService.class);
         cancelIntent.setAction(ACTION_CANCEL_COUNTDOWN);
@@ -266,13 +286,26 @@ public class CrashMonitorService extends Service implements SensorEventListener,
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Notification.Action cancelAction = new Notification.Action.Builder(
+                    Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel),
+                    "I'M SAFE / CANCEL",
+                    cancelPi
+            ).build();
+            builder.addAction(cancelAction);
+        } else {
+            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M SAFE / CANCEL", cancelPi);
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            builder.setPriority(Notification.PRIORITY_MAX);
+        }
+
         Notification notif = builder
                 .setContentTitle("CRASH DETECTED — SOS in " + seconds + "s")
                 .setContentText(String.format("Impact peak: %.1fg. Tap CANCEL if you are safe.", peakG))
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M SAFE / CANCEL", cancelPi)
                 .setOngoing(true)
-                .setPriority(Notification.PRIORITY_MAX)
                 .build();
 
         notificationManager.notify(NOTIF_ID_COUNTDOWN, notif);

@@ -16,6 +16,9 @@ This document indexes every Markdown documentation file across the repository, c
 | [`docs/CLAIMS_MATRIX.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/CLAIMS_MATRIX.md) | **TEST/QA DOCUMENTATION** | Verifiable technical claims vs evidence | Maintained |
 | [`docs/CONFIGURATION_REFERENCE.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/CONFIGURATION_REFERENCE.md) | **IMPLEMENTATION GUIDE**| Master environment variables, bounding box, and tunables | Maintained |
 | [`docs/DEPLOYMENT.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/DEPLOYMENT.md) | **IMPLEMENTATION GUIDE**| Local, Docker, and Android deployment procedures | Maintained |
+| [`docs/REAL_PROTOTYPE_SPEC.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/REAL_PROTOTYPE_SPEC.md) | **ACTIVE SPECIFICATION** | Authoritative Master Prototype Specification (M10–M18) | Maintained (Authoritative) |
+| [`docs/REALITY_LEDGER.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/REALITY_LEDGER.md) | **TEST/QA DOCUMENTATION** | Verified catalog of all simulated items resolved | Maintained (15/15 Resolved) |
+| [`docs/DEVICE_TEST.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/DEVICE_TEST.md) | **IMPLEMENTATION GUIDE**| Physical OEM Android configuration & device testing | Maintained |
 | [`docs/DOCUMENTATION_INDEX.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/DOCUMENTATION_INDEX.md) | **ACTIVE DOCUMENTATION** | (This document) Master documentation index | Maintained |
 | [`docs/FILE_CLEANUP_REPORT.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/FILE_CLEANUP_REPORT.md) | **TEST/QA DOCUMENTATION** | Audit of pruned, retained, and archived files | Maintained |
 | [`docs/HANDOFF.md`](file:///c:/Users/ahadd/Documents/GitHub/SaHaay-2k26/docs/HANDOFF.md) | **HISTORICAL RECORD** | Milestone sprint ledger (M1–M11) | Maintained per milestone |
