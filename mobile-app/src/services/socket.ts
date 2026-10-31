@@ -10,6 +10,8 @@ export type SocketMessage =
   | { type: 'MISSION_UPDATED'; mission: any }
   | { type: 'AMBULANCE_LOCATION'; ambulanceId: string; lat: number; lon: number; heading?: number; speedKmh?: number }
   | { type: 'OFFER_SENT'; missionId: string; ambulanceId: string; radiusM: number }
+  | { type: 'DRIVER_OFFER'; missionId: string; ambulanceId: string; lat?: number; lon?: number; distanceM?: number }
+  | { type: 'OFFER_CANCELLED'; missionId: string; ambulanceId: string }
   | { type: 'BREAKDOWN'; missionId: string; ambulanceId: string }
   | { type: 'AUDIT_ENTRY'; entry: any }
   | { type: 'PING' }

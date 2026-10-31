@@ -117,11 +117,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (activeDriverMission && activeDriverMission.id === m.id) {
           setActiveDriverMission(m);
         }
-      } else if (msg.type === 'OFFER_SENT') {
+      } else if (msg.type === 'OFFER_SENT' || msg.type === 'DRIVER_OFFER') {
         if (msg.ambulanceId === driverAmbulance.id) {
           api.fetchMission(msg.missionId).then((m) => {
             if (m) setIncomingOffer(m);
           });
+        }
+      } else if (msg.type === 'OFFER_CANCELLED') {
+        if (msg.ambulanceId === driverAmbulance.id) {
+          setIncomingOffer(null);
         }
       } else if (msg.type === 'AMBULANCE_LOCATION') {
         if (assignedAmbulance && assignedAmbulance.id === msg.ambulanceId) {
