@@ -150,7 +150,7 @@ async function advanceMissionStage() {
   const badge = document.getElementById('nav-stage-badge');
   const actionBtn = document.getElementById('stage-action-btn');
   if (badge) badge.textContent = stage.name;
-  if (actionBtn) actionBtn.innerHTML = `<span>${stage.nextAction}</span><span>➔</span>`;
+  if (actionBtn) actionBtn.innerHTML = `<span>${stage.nextAction}</span><i class="bi bi-arrow-right ms-1"></i>`;
 
   try {
     await fetch(`${API_BASE}/missions/${activeMissionId}/status`, {

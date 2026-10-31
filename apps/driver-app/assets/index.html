@@ -5,38 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SaHaay Driver</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#0c0d10] text-white h-screen w-screen flex flex-col justify-between overflow-hidden select-none">
+<body class="bg-[#0f1015] text-white h-screen w-screen flex flex-col justify-between overflow-hidden select-none">
 
   <!-- ── Dynamic Content Container ───────────────────────────────────── -->
   <div id="app-container" class="relative flex-1 w-full h-full overflow-hidden flex flex-col">
 
-    <!-- ── 1. DRIVER MAIN HOME (Based on 06_visual_reference_dark_explore_ui) ── -->
-    <div id="screen-home" class="screen-view active flex-1 flex flex-col justify-between p-4 bg-[#0c0d10] overflow-y-auto no-scrollbar">
-      <!-- Header Section -->
-      <div class="relative pt-2 px-2 flex items-center justify-between z-20">
-        <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/20 bg-slate-800 flex items-center justify-center font-bold text-xs text-white">
-            RP
+    <!-- ── 1. DRIVER MAIN DUTY SCREEN (From 06_visual_reference_dark_explore_ui) ── -->
+    <div id="screen-home" class="screen-view active flex-1 flex flex-col justify-between p-4 bg-[#0f1015] overflow-y-auto no-scrollbar">
+      <!-- App Header -->
+      <div class="flex items-center justify-between pt-2 pb-2 px-1 text-white">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-[#1e2029] border border-white/10 flex items-center justify-center text-sm font-bold text-white">
+            <i class="bi bi-truck text-emerald-400"></i>
           </div>
           <div>
-            <div class="text-xs font-bold text-white" id="driver-display-name">Ramesh Patel</div>
-            <div class="text-[9px] text-slate-400">AMB-GJ01-4020 • ALS Unit</div>
+            <div class="text-xs font-bold tracking-tight" id="driver-name">Paramedic Rajesh Patel</div>
+            <div class="text-[9px] text-slate-400">GJ-01-AX-4020 • ALS Priority Unit</div>
           </div>
         </div>
 
-        <div id="verification-badge" class="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-          ● VERIFIED
+        <div class="flex items-center space-x-2">
+          <!-- Gateway Mode Indicator / Toggle -->
+          <button id="gateway-toggle-btn" onclick="toggleGatewayMode()" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[9px] font-semibold text-slate-400 flex items-center gap-1" title="Toggle In-App GSM SMS Relay Gateway">
+            <i class="bi bi-broadcast"></i> <span id="gateway-status-label">GW: OFF</span>
+          </button>
+          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="driver-status-badge">
+            AVAILABLE
+          </span>
         </div>
       </div>
 
-      <!-- Central On-Duty Radar Dome (Voice Dome Repurposed) -->
-      <div class="relative flex flex-col items-center justify-center my-auto py-4 z-20">
-        <div id="duty-radar-dome" onclick="toggleDutyStatus()" class="voice-dome active relative w-48 h-48 rounded-full flex flex-col items-center justify-center cursor-pointer p-4 select-none">
-          <div class="text-[10px] text-slate-400 font-medium mb-1" id="duty-subtext">PARAMEDIC DUTY</div>
-          <div class="text-base font-black text-white tracking-wide" id="duty-status-text">ON DUTY</div>
-          
+      <!-- Hero Duty Activation Radar (Repurposed Center Orb) -->
+      <div class="my-auto flex flex-col items-center justify-center py-4">
+        <div id="duty-radar" class="duty-radar-container active cursor-pointer" onclick="toggleDuty()">
+          <div class="duty-radar-ring ring-1"></div>
+          <div class="duty-radar-ring ring-2"></div>
+          <div class="duty-radar-ring ring-3"></div>
+          <div class="duty-radar-core">
+            <div class="text-xs font-black tracking-widest text-emerald-400" id="duty-text">ON DUTY</div>
+            <div class="text-[8px] text-slate-400 uppercase font-bold mt-1">Tap to Pause</div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-center">
+          <div class="text-xs font-bold text-white tracking-wide" id="radar-caption">RADAR DOME BROADCASTING</div>
           <!-- Sound / Telemetry wave bars -->
           <div class="flex items-center justify-center gap-1.5 h-8 mt-2">
             <span class="sound-bar w-1 bg-emerald-400 rounded-full h-3"></span>
@@ -50,7 +65,7 @@
 
         <!-- Verification Gate Warning Notice if unverified -->
         <div id="unverified-warning" class="hidden mt-4 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-center max-w-xs text-xs text-amber-300">
-          ⚠️ <strong>State Verification Pending:</strong> Your license is being reviewed by Ahmedabad EMS control. On-duty activation is disabled.
+          <i class="bi bi-exclamation-triangle-fill text-amber-400 me-1"></i> <strong>State Verification Pending:</strong> Your license is being reviewed by Ahmedabad EMS control. On-duty activation is disabled.
         </div>
       </div>
 
@@ -61,7 +76,7 @@
           <!-- Card 1: Active Mission -->
           <div onclick="navigateTo('navigation')" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
             <div class="w-7 h-7 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-sm mb-2">
-              🚨
+              <i class="bi bi-bell-fill"></i>
             </div>
             <h4 class="text-xs font-semibold text-white">Active Mission</h4>
             <p class="text-[9px] text-slate-400 mt-0.5">Navrangpura Code Red</p>
@@ -70,7 +85,7 @@
           <!-- Card 2: Pickup Navigation -->
           <div onclick="navigateTo('navigation')" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
             <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm mb-2">
-              🗺️
+              <i class="bi bi-map-fill"></i>
             </div>
             <h4 class="text-xs font-semibold text-white">GPS Navigation</h4>
             <p class="text-[9px] text-slate-400 mt-0.5">Live turn-by-turn route</p>
@@ -79,16 +94,16 @@
           <!-- Card 3: Patient Triage -->
           <div onclick="openPatientModal()" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
             <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm mb-2">
-              📋
+              <i class="bi bi-clipboard2-pulse-fill"></i>
             </div>
             <h4 class="text-xs font-semibold text-white">Patient Intake</h4>
-            <p class="text-[9px] text-slate-400 mt-0.5">Vitals & pre-arrival info</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">Vitals &amp; pre-arrival info</p>
           </div>
 
           <!-- Card 4: Report Breakdown -->
           <div onclick="openBreakdownModal()" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
             <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm mb-2">
-              ⚠️
+              <i class="bi bi-exclamation-triangle-fill"></i>
             </div>
             <h4 class="text-xs font-semibold text-white">Breakdown</h4>
             <p class="text-[9px] text-slate-400 mt-0.5">Trigger auto replacement</p>
@@ -102,7 +117,7 @@
       <!-- Header -->
       <div class="px-5 pt-3 pb-2 flex items-center justify-between bg-white/95 border-b border-slate-100 z-10">
         <button onclick="navigateTo('home')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700">
-          ❮
+          <i class="bi bi-chevron-left"></i>
         </button>
         <div class="text-center">
           <h2 class="text-xs font-bold text-slate-800">Dispatch Navigation</h2>
@@ -126,15 +141,15 @@
 
         <!-- Driver Ambulance Marker -->
         <div class="absolute top-[85px] left-[130px] flex items-center justify-center">
-          <div class="w-10 h-10 rounded-2xl bg-[#090d16] border-2 border-white shadow-xl flex items-center justify-center text-lg">
-            🚑
+          <div class="w-10 h-10 rounded-2xl bg-[#090d16] border-2 border-white shadow-xl flex items-center justify-center text-lg text-emerald-400">
+            <i class="bi bi-truck"></i>
           </div>
         </div>
 
         <!-- Patient Destination Marker -->
         <div class="absolute top-[230px] left-[230px] flex items-center justify-center">
           <div class="w-8 h-8 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs">
-            📍
+            <i class="bi bi-geo-alt-fill"></i>
           </div>
         </div>
 
@@ -160,7 +175,7 @@
         <!-- Stage Progression Button -->
         <button id="stage-action-btn" onclick="advanceMissionStage()" class="w-full mt-2 py-3.5 bg-[#eb3824] hover:bg-[#d42c19] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-500/25 flex items-center justify-center space-x-2 transition-all">
           <span>ARRIVED AT PATIENT (STEP 1)</span>
-          <span>➔</span>
+          <i class="bi bi-arrow-right"></i>
         </button>
       </div>
     </div>
@@ -168,7 +183,7 @@
     <!-- ── 3. INCOMING MISSION OFFER MODAL ── -->
     <div id="incoming-offer-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
       <div class="w-16 h-16 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center mb-4 animate-bounce">
-        <span class="text-2xl">🚨</span>
+        <i class="bi bi-bell-fill text-2xl text-red-500"></i>
       </div>
       <span class="text-xs font-bold uppercase tracking-widest text-red-500">INCOMING EMERGENCY MISSION</span>
       <h2 class="text-xl font-black text-white mt-1">Code Red — Urgent Dispatch</h2>
@@ -204,7 +219,7 @@
     <!-- ── 4. VEHICLE BREAKDOWN REPORTING MODAL ── -->
     <div id="breakdown-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
       <div class="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center mb-4">
-        <span class="text-2xl">⚠️</span>
+        <i class="bi bi-exclamation-triangle-fill text-2xl text-amber-500"></i>
       </div>
       <h2 class="text-lg font-bold text-white">Report Vehicle Breakdown</h2>
       <p class="text-xs text-slate-400 max-w-xs my-3">
@@ -225,19 +240,19 @@
   <!-- ── Driver Bottom Dock (From 06_visual_reference_dark_explore_ui) ── -->
   <footer class="bg-[#1a1c22]/95 border-t border-white/10 px-6 py-2.5 flex items-center justify-around z-30">
     <button onclick="navigateTo('home')" class="nav-btn flex flex-col items-center text-white" data-target="home">
-      <span class="text-base">⚡</span>
+      <i class="bi bi-speedometer2 text-base"></i>
       <span class="text-[9px] font-semibold mt-0.5">Duty</span>
     </button>
     <button onclick="navigateTo('navigation')" class="nav-btn flex flex-col items-center text-zinc-400" data-target="navigation">
-      <span class="text-base">🗺️</span>
+      <i class="bi bi-geo-alt-fill text-base"></i>
       <span class="text-[9px] font-semibold mt-0.5">Nav</span>
     </button>
     <button onclick="showSimulationOffer()" class="nav-btn flex flex-col items-center text-zinc-400" title="Simulate Emergency Dispatch">
-      <span class="text-base">🚨</span>
+      <i class="bi bi-bell-fill text-base"></i>
       <span class="text-[9px] font-semibold mt-0.5">Offer</span>
     </button>
     <button onclick="openBreakdownModal()" class="nav-btn flex flex-col items-center text-zinc-400">
-      <span class="text-base">⚠️</span>
+      <i class="bi bi-shield-exclamation text-base"></i>
       <span class="text-[9px] font-semibold mt-0.5">Safety</span>
     </button>
   </footer>

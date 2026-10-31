@@ -85,7 +85,7 @@ export const RealFleetMap: React.FC<RealFleetMapProps> = ({
       } else {
         const el = document.createElement('div');
         el.className = 'w-7 h-7 bg-red-600 border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg';
-        el.innerText = '🚑';
+        el.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 5.034v1.1l.953-.55.5.867L9 7l.953.55-.5.866-.953-.55v1.1h-1v-1.1l-.953.55-.5-.866L7 7l-.953-.55.5-.866.953.55v-1.1zM4.5 1a1 1 0 0 0-1 1v1H2a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1.5V2a1 1 0 0 0-1-1zm7 2v1h-7V3zM1 5h14v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/></svg>';
 
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([a.lon, a.lat])
