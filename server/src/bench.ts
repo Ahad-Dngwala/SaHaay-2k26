@@ -25,13 +25,19 @@ function formatMs(n: number): string {
   return n < 0.01 ? `${(n * 1000).toFixed(1)} µs` : `${n.toFixed(3)} ms`;
 }
 
+let seed = 12345;
+function pseudoRandom(): number {
+  seed = (seed * 1664525 + 1013904223) % 4294967296;
+  return seed / 4294967296;
+}
+
 function bench(count: number): Record<number, { p50: number; p95: number; p99: number; max: number; candidatesFound: number }> {
-  // Build a grid with `count` random-ish ambulances around Ahmedabad
+  // Build a grid with `count` ambulances around Ahmedabad
   const grid = new SpatialGrid();
   for (let i = 0; i < count; i++) {
     // Spread ±0.5° lat, ±0.5° lon around Ahmedabad (~55 km × ~50 km)
-    const lat = AHM_LAT + (Math.random() - 0.5) * 1.0;
-    const lon = AHM_LON + (Math.random() - 0.5) * 1.0;
+    const lat = AHM_LAT + (pseudoRandom() - 0.5) * 1.0;
+    const lon = AHM_LON + (pseudoRandom() - 0.5) * 1.0;
     grid.upsert(`SYN-${i}`, lat, lon);
   }
 

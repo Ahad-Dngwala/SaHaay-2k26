@@ -233,6 +233,38 @@
       "heading": 0,
       "speedKmh": 0,
       "createdAt": 1793446489908
+    },
+    "amb-reg-5492": {
+      "id": "amb-reg-5492",
+      "name": "Suresh Parmar",
+      "phone": "+919898005489",
+      "licenseNo": "GJ-01-2024-675489",
+      "vehicleNo": "GJ-01-CZ-9999",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793446675492
+    },
+    "amb-reg-3168": {
+      "id": "amb-reg-3168",
+      "name": "Suresh Parmar",
+      "phone": "+919898003153",
+      "licenseNo": "GJ-01-2024-783153",
+      "vehicleNo": "GJ-01-CZ-9999",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793446783168
     }
   },
   "news": {
@@ -417,6 +449,32 @@
       "status": "PUBLISHED",
       "publishedAt": 1793446489924,
       "createdAt": 1793446489924
+    },
+    "news-1793446675520": {
+      "id": "news-1793446675520",
+      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
+      "category": "GOVT_ALERT",
+      "priority": "HIGH",
+      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "officialSource": "Gujarat Disaster Management Authority",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793446675520,
+      "createdAt": 1793446675520
+    },
+    "news-1793446783222": {
+      "id": "news-1793446783222",
+      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
+      "category": "GOVT_ALERT",
+      "priority": "HIGH",
+      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "officialSource": "Gujarat Disaster Management Authority",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793446783222,
+      "createdAt": 1793446783222
     }
   },
   "releases": {
