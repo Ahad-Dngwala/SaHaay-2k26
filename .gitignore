@@ -8,6 +8,12 @@ yarn.lock
 .env.*.local
 src/config/env.js
 
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+server/data/*.sqlite*
+
 # Logs
 logs/
 *.log
@@ -36,7 +42,6 @@ frontend/dist/
 *.tsbuildinfo
 .expo/
 .cache/
-
 
 # Test coverage
 coverage/
