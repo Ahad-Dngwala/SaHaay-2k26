@@ -1,0 +1,204 @@
+{
+  "citizens": {
+    "cit-demo-1": {
+      "id": "cit-demo-1",
+      "phone": "+919876543210",
+      "name": "Aarav Patel",
+      "bloodGroup": "B+",
+      "emergencyContacts": [
+        {
+          "name": "Dr. Priya Patel",
+          "phone": "+919876543211",
+          "relationship": "Spouse"
+        },
+        {
+          "name": "Kavita Patel",
+          "phone": "+919876543212",
+          "relationship": "Sister"
+        }
+      ],
+      "allergies": [
+        "Penicillin",
+        "Sulfa drugs"
+      ],
+      "medicalNotes": "Type-1 diabetic. Asthmatic (inhaler carried).",
+      "createdAt": 1793178046996
+    }
+  },
+  "drivers": {
+    "amb-01": {
+      "id": "amb-01",
+      "name": "Ramesh Patel",
+      "phone": "+919825012345",
+      "licenseNo": "GJ-01-2019-004821",
+      "vehicleNo": "GJ-01-AX-4020",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 45,
+      "speedKmh": 0,
+      "createdAt": 1792573246996
+    },
+    "amb-02": {
+      "id": "amb-02",
+      "name": "Mukesh Solanki",
+      "phone": "+919825054321",
+      "licenseNo": "GJ-01-2022-009133",
+      "vehicleNo": "GJ-01-BY-1122",
+      "ambulanceType": "BLS",
+      "isVerified": false,
+      "verificationStatus": "PENDING",
+      "isOnDuty": false,
+      "currentLat": 23.0487,
+      "currentLon": 72.5694,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793350846996
+    },
+    "amb-reg-7520": {
+      "id": "amb-reg-7520",
+      "name": "Suresh Parmar",
+      "phone": "+919898007516",
+      "licenseNo": "GJ-01-2024-247516",
+      "vehicleNo": "GJ-01-CZ-9999",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793437247520
+    },
+    "amb-reg-6847": {
+      "id": "amb-reg-6847",
+      "name": "Suresh Parmar",
+      "phone": "+919898006843",
+      "licenseNo": "GJ-01-2024-486843",
+      "vehicleNo": "GJ-01-CZ-9999",
+      "ambulanceType": "ALS",
+      "isVerified": true,
+      "verificationStatus": "VERIFIED",
+      "isOnDuty": true,
+      "currentLat": 23.0365,
+      "currentLon": 72.5611,
+      "heading": 0,
+      "speedKmh": 0,
+      "createdAt": 1793437486847
+    }
+  },
+  "news": {
+    "news-01": {
+      "id": "news-01",
+      "title": "Gujarat Emergency Medical Services Upgrade: 108 Fleet Modernization",
+      "category": "GOVT_ALERT",
+      "priority": "CRITICAL",
+      "body": "State Health & Family Welfare Department announces 24/7 dedicated dispatch integration with SaHaay offline emergency mesh across Ahmedabad metro area.",
+      "officialSource": "Gujarat Health Department Bulletin No. 44",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "isPinned": true,
+      "status": "PUBLISHED",
+      "publishedAt": 1793394046996,
+      "createdAt": 1793394046996
+    },
+    "news-02": {
+      "id": "news-02",
+      "title": "Monsoon Waterlogging Safety Advisory: Low-lying Underspasses in Ashram Road",
+      "category": "ROAD_SAFETY",
+      "priority": "HIGH",
+      "body": "Drivers and citizens advised to avoid Akhbarnagar and Usmanpura underpasses during heavy rain. Alternative elevated routes mapped on SaHaay telemetry.",
+      "officialSource": "Ahmedabad Municipal Corporation (AMC)",
+      "sourceUrl": "https://ahmedabadcity.gov.in",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793350846996,
+      "createdAt": 1793350846996
+    },
+    "news-03": {
+      "id": "news-03",
+      "title": "CPR and First Response Workshops at Civil Hospital Ahmedabad",
+      "category": "DISASTER_PREP",
+      "priority": "NORMAL",
+      "body": "Free public certified training in emergency compression and automated external defibrillator usage every Saturday morning.",
+      "officialSource": "Civil Hospital Ahmedabad Trauma Wing",
+      "sourceUrl": "https://civilhospitalahmedabad.org",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793264446996,
+      "createdAt": 1793264446996
+    },
+    "news-1793437247547": {
+      "id": "news-1793437247547",
+      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
+      "category": "GOVT_ALERT",
+      "priority": "HIGH",
+      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "officialSource": "Gujarat Disaster Management Authority",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793437247547,
+      "createdAt": 1793437247547
+    },
+    "news-1793437486880": {
+      "id": "news-1793437486880",
+      "title": "Ahmedabad Heatwave Advisory: Emergency Fluid Resupply",
+      "category": "GOVT_ALERT",
+      "priority": "HIGH",
+      "body": "Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.",
+      "sourceUrl": "https://gujhealth.gujarat.gov.in",
+      "officialSource": "Gujarat Disaster Management Authority",
+      "isPinned": false,
+      "status": "PUBLISHED",
+      "publishedAt": 1793437486880,
+      "createdAt": 1793437486880
+    }
+  },
+  "releases": {
+    "rel-citizen": {
+      "id": "rel-citizen",
+      "appType": "citizen",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "fileName": "SaHaay-Citizen.apk",
+      "fileSize": 21068,
+      "sha256": "40072A6C7DCADF27C1F818507969E77FC27C352509D7697BD8FF65832B3FBEFB",
+      "minAndroid": "Android 10 (API 29)+",
+      "releaseNotes": [
+        "Initial release of SaHaay Citizen Native Android App",
+        "Tactile 112 hotline and Red SOS hold-to-confirm emergency dispatch",
+        "Automatic impact crash detection with 30s cancellation countdown",
+        "Live approaching ambulance tracking across Ahmedabad with real ETA",
+        "Repurposed government alerts & road safety awareness updates feed"
+      ],
+      "downloadUrl": "/downloads/SaHaay-Citizen.apk",
+      "isPublished": true,
+      "publishedAt": 1793437246996
+    },
+    "rel-driver": {
+      "id": "rel-driver",
+      "appType": "driver",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "fileName": "SaHaay-Driver.apk",
+      "fileSize": 21069,
+      "sha256": "D2B9784CEF109A399D68520AF8ED6B727C6ACFB297A438B647D4B20C2B9C22B1",
+      "minAndroid": "Android 10 (API 29)+",
+      "releaseNotes": [
+        "Initial release of SaHaay Ambulance Driver Native Android App",
+        "Strict driver & vehicle license verification gate",
+        "On-duty radar dome availability and live GPS telemetry broadcast",
+        "Atomic first-accept emergency mission lock",
+        "Navigation stages: en route, arrived, picked up, hospital handover",
+        "Driver vehicle breakdown reporting with automatic replacement dispatch"
+      ],
+      "downloadUrl": "/downloads/SaHaay-Driver.apk",
+      "isPublished": true,
+      "publishedAt": 1793437246996
+    }
+  }
+}

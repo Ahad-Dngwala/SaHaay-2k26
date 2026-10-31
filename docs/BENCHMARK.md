@@ -1,6 +1,6 @@
 # SaHaay — Dispatch Search Benchmark
 
-**Measured:** 2026-10-27 | Node.js v22.23.4
+**Measured:** 2026-10-31 | Node.js v22.23.4
 
 > ⚠️ These numbers are for the **in-process spatial index search only** (excluding network I/O, DB, WebSocket overhead).
 > The slide claim "under 200 ms" refers specifically to this search step.
@@ -14,21 +14,21 @@
 
 | Radius | Avg. Candidates Found | p50 | p95 | p99 | Max |
 |--------|----------------------|-----|-----|-----|-----|
-| 0.5 km | 0 | 3.0 µs | 6.0 µs | 0.015 ms | 3.661 ms |
-| 1.0 km | 0 | 1.6 µs | 2.7 µs | 6.0 µs | 0.039 ms |
-| 2.0 km | 3 | 3.5 µs | 5.7 µs | 9.0 µs | 0.075 ms |
-| 4.0 km | 5 | 5.3 µs | 8.8 µs | 0.013 ms | 1.716 ms |
-| 8.0 km | 11 | 0.012 ms | 0.020 ms | 0.036 ms | 0.092 ms |
+| 0.5 km | 0 | 6.2 µs | 0.012 ms | 0.060 ms | 0.222 ms |
+| 1.0 km | 0 | 5.5 µs | 8.2 µs | 0.049 ms | 0.189 ms |
+| 2.0 km | 0 | 8.2 µs | 0.021 ms | 0.042 ms | 0.281 ms |
+| 4.0 km | 1 | 0.013 ms | 0.034 ms | 0.048 ms | 0.197 ms |
+| 8.0 km | 6 | 0.029 ms | 0.046 ms | 0.103 ms | 2.753 ms |
 
 ## 10,000 Ambulances
 
 | Radius | Avg. Candidates Found | p50 | p95 | p99 | Max |
 |--------|----------------------|-----|-----|-----|-----|
-| 0.5 km | 1 | 2.6 µs | 3.9 µs | 8.0 µs | 0.260 ms |
-| 1.0 km | 5 | 3.8 µs | 4.5 µs | 6.2 µs | 0.102 ms |
-| 2.0 km | 12 | 4.2 µs | 6.7 µs | 0.010 ms | 0.183 ms |
-| 4.0 km | 32 | 8.7 µs | 0.018 ms | 0.050 ms | 1.876 ms |
-| 8.0 km | 109 | 0.026 ms | 0.044 ms | 0.095 ms | 0.896 ms |
+| 0.5 km | 0 | 9.0 µs | 0.014 ms | 0.025 ms | 0.110 ms |
+| 1.0 km | 4 | 7.0 µs | 0.013 ms | 0.026 ms | 0.102 ms |
+| 2.0 km | 15 | 0.014 ms | 0.023 ms | 0.049 ms | 3.702 ms |
+| 4.0 km | 29 | 0.027 ms | 0.045 ms | 0.085 ms | 0.421 ms |
+| 8.0 km | 93 | 0.072 ms | 0.123 ms | 0.177 ms | 1.107 ms |
 
 ## Interpretation
 

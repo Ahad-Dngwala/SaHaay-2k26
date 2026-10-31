@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>SaHaay Driver - Emergency Dispatch</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Syne:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#070707',
+              surface: '#121214',
+              card: '#18181b',
+              accent: '#ff3b30',
+              teal: '#00c2cb'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Syne"', 'sans-serif']
+          },
+          borderRadius: {
+            '3xl': '28px',
+            '4xl': '36px'
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Typography & Micro-Interactions -->
+<style data-purpose="typography">
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background-color: #050505;
+      color: #ffffff;
+      user-select: none;
+    }
+    .headline-font {
+      font-family: 'Syne', -apple-system, sans-serif;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+    }
+  </style>
+<!-- Custom Layout & Component Styles -->
+<style data-purpose="layout">
+    /* Hide scrollbars for slick mobile view */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Gradient border ring for live responder avatars */
+    .avatar-ring-glow {
+      position: relative;
+    }
+    .avatar-ring-glow::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ff3b30, #ff9500, #ff2d55);
+      z-index: 0;
+    }
+
+    /* Glass and backdrop blur effects */
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    /* Stacked Floating Action Column */
+    .floating-action-cluster {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-neutral-950 p-0 sm:p-4">
+<!-- BEGIN: MobileDeviceFrame -->
+<main class="w-full max-w-[420px] h-[100dvh] sm:h-[880px] bg-black text-white relative flex flex-col justify-between overflow-hidden sm:rounded-[50px] sm:border-[8px] sm:border-neutral-800 shadow-[0_25px_80px_rgba(0,0,0,0.95)]">
+<!-- BEGIN: TopBar -->
+<header class="pt-3 px-6 pb-2 z-20 flex-shrink-0" data-purpose="status-and-top-navigation">
+<!-- iOS Status Bar Simulation -->
+<div class="flex justify-between items-center text-xs font-semibold tracking-tight text-neutral-300 pb-3 pt-1">
+<span>09:41</span>
+<div class="w-28 h-4 bg-neutral-900 rounded-full mx-auto hidden sm:block"></div>
+<div class="flex items-center space-x-2">
+<i class="fa-solid fa-signal text-[10px]"></i>
+<i class="fa-solid fa-wifi text-[10px]"></i>
+<i class="fa-solid fa-battery-full text-xs"></i>
+</div>
+</div>
+<!-- App Header Icon Row -->
+<div class="flex items-center justify-between mt-1">
+<!-- Brand Glyph & Status Indicator -->
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-2xl bg-neutral-900 flex items-center justify-center border border-neutral-800 text-white font-black text-lg tracking-tighter">
+<i class="fa-solid fa-shield-heart text-red-500 text-sm"></i>
+</div>
+<div>
+<div class="text-[11px] font-bold uppercase tracking-wider text-neutral-400">SaHaay EMS</div>
+<div class="flex items-center space-x-1.5">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="text-xs font-semibold text-white tracking-tight">Active Unit 402</span>
+</div>
+</div>
+</div>
+<!-- Top Right Actions: Search & Notifications -->
+<div class="flex items-center space-x-2.5">
+<button aria-label="Search units" class="w-9 h-9 rounded-full bg-neutral-900 border border-neutral-800/80 flex items-center justify-center text-neutral-300 active:scale-95 transition-transform">
+<i class="fa-solid fa-magnifying-glass text-xs"></i>
+</button>
+<div class="relative">
+<button aria-label="View notifications" class="w-9 h-9 rounded-full bg-neutral-900 border border-neutral-800/80 flex items-center justify-center text-neutral-300 active:scale-95 transition-transform">
+<i class="fa-regular fa-bell text-xs"></i>
+</button>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-black"></span>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: ResponderStatusCarousel -->
+<!-- Horizontal row of available paramedic crew units inspired by top row in IMAGE_12 -->
+<section class="px-5 py-2 z-10 flex-shrink-0" data-purpose="active-paramedic-squad">
+<div class="flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
+<!-- Unit Card 1 (Active Driver / You) -->
+<div class="flex flex-col items-center flex-shrink-0 w-16">
+<div class="avatar-ring-glow w-14 h-14 rounded-2xl p-[2.5px] mb-1">
+<div class="relative w-full h-full bg-neutral-900 rounded-[14px] overflow-hidden z-10 flex items-center justify-center">
+<span class="font-display font-bold text-sm text-neutral-200">YOU</span>
+<span class="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-neutral-900"></span>
+</div>
+</div>
+<span class="text-[10px] text-neutral-300 font-semibold tracking-tight truncate w-full text-center">En Route</span>
+</div>
+<!-- Unit Card 2 -->
+<div class="flex flex-col items-center flex-shrink-0 w-16 opacity-85">
+<div class="w-14 h-14 rounded-2xl p-[2px] bg-neutral-800 mb-1 border border-neutral-700/60 flex items-center justify-center">
+<div class="w-full h-full bg-neutral-900 rounded-[13px] flex flex-col items-center justify-center">
+<i class="fa-solid fa-truck-medical text-red-400 text-sm mb-0.5"></i>
+<span class="text-[9px] font-bold text-neutral-400">AMB-12</span>
+</div>
+</div>
+<span class="text-[10px] text-neutral-400 font-medium truncate w-full text-center">Dr. Roy</span>
+</div>
+<!-- Unit Card 3 -->
+<div class="flex flex-col items-center flex-shrink-0 w-16 opacity-85">
+<div class="w-14 h-14 rounded-2xl p-[2px] bg-neutral-800 mb-1 border border-neutral-700/60 flex items-center justify-center">
+<div class="w-full h-full bg-neutral-900 rounded-[13px] flex flex-col items-center justify-center">
+<i class="fa-solid fa-heart-pulse text-amber-400 text-sm mb-0.5"></i>
+<span class="text-[9px] font-bold text-neutral-400">MED-04</span>
+</div>
+</div>
+<span class="text-[10px] text-neutral-400 font-medium truncate w-full text-center">Triage B</span>
+</div>
+<!-- Unit Card 4 -->
+<div class="flex flex-col items-center flex-shrink-0 w-16 opacity-85">
+<div class="w-14 h-14 rounded-2xl p-[2px] bg-neutral-800 mb-1 border border-neutral-700/60 flex items-center justify-center">
+<div class="w-full h-full bg-neutral-900 rounded-[13px] flex flex-col items-center justify-center">
+<i class="fa-solid fa-hospital-user text-sky-400 text-sm mb-0.5"></i>
+<span class="text-[9px] font-bold text-neutral-400">ICU-08</span>
+</div>
+</div>
+<span class="text-[10px] text-neutral-400 font-medium truncate w-full text-center">Metro Gen</span>
+</div>
+<!-- Unit Card 5 -->
+<div class="flex flex-col items-center flex-shrink-0 w-16 opacity-60">
+<div class="w-14 h-14 rounded-2xl p-[2px] bg-neutral-800 mb-1 border border-neutral-700/60 flex items-center justify-center">
+<div class="w-full h-full bg-neutral-900 rounded-[13px] flex flex-col items-center justify-center">
+<i class="fa-solid fa-circle-plus text-neutral-500 text-sm mb-0.5"></i>
+<span class="text-[9px] font-bold text-neutral-500">STANDBY</span>
+</div>
+</div>
+<span class="text-[10px] text-neutral-500 font-medium truncate w-full text-center">Reserve</span>
+</div>
+</div>
+</section>
+<!-- END: ResponderStatusCarousel -->
+<!-- BEGIN: MainDispatchBody -->
+<!-- Content container with high-contrast card & right floating action cluster -->
+<div class="flex-1 px-4 py-2 flex flex-col relative overflow-hidden" data-purpose="mission-container">
+<!-- Primary Emergency Dispatch Card (High contrast white surface inspired by IMAGE_12) -->
+<article class="bg-white text-black rounded-[36px] p-6 shadow-2xl flex-1 flex flex-col justify-between relative overflow-hidden">
+<!-- Header Info Inside White Card -->
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-3">
+<div class="w-11 h-11 rounded-2xl bg-neutral-950 text-white flex items-center justify-center shadow-md">
+<i class="fa-solid fa-kit-medical text-red-500 text-lg"></i>
+</div>
+<div>
+<div class="flex items-center space-x-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Code Red Priority</span>
+</div>
+<h2 class="text-sm font-bold text-neutral-900 tracking-tight mt-0.5">Triage Incident #8841</h2>
+</div>
+</div>
+<div class="text-right">
+<span class="text-2xl font-black font-display text-neutral-900 tracking-tighter">4.2</span>
+<span class="text-xs font-semibold text-neutral-500 block -mt-1">km away</span>
+</div>
+</div>
+<!-- Big Bold Display Typography (Exact visual vibe of IMAGE_12 main card) -->
+<div class="my-4">
+<p class="text-[11px] uppercase font-bold text-neutral-400 tracking-wider mb-1">Incident Diagnosis</p>
+<h1 class="headline-font text-[32px] font-extrabold text-neutral-950 leading-[1.05]">
+            Critical Cardiac Distress &amp; Rapid Transport
+          </h1>
+<div class="flex items-center space-x-3 mt-4 text-xs font-semibold text-neutral-600">
+<span class="flex items-center space-x-1 bg-neutral-100 px-2.5 py-1.5 rounded-xl">
+<i class="fa-solid fa-clock text-neutral-900 text-[11px]"></i>
+<span class="text-neutral-900">ETA: 6 mins</span>
+</span>
+<span class="flex items-center space-x-1 bg-neutral-100 px-2.5 py-1.5 rounded-xl">
+<i class="fa-solid fa-location-arrow text-neutral-900 text-[11px]"></i>
+<span class="text-neutral-900">MG Road, Sector 4</span>
+</span>
+</div>
+</div>
+<!-- Route & Patient Mini Ticker within White Card -->
+<div class="border-t border-neutral-100 pt-4 flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-700">
+<i class="fa-solid fa-user-injured text-xs"></i>
+</div>
+<div>
+<p class="text-xs font-bold text-neutral-900">Vikram Malhotra, 58</p>
+<p class="text-[10px] font-medium text-neutral-500">SpO2: 88% • BP: 165/100</p>
+</div>
+</div>
+<!-- Quick Navigation Trigger -->
+<button aria-label="Open GPS Map" class="w-9 h-9 rounded-full bg-neutral-900 text-white flex items-center justify-center shadow hover:bg-neutral-800 active:scale-95 transition-transform">
+<i class="fa-solid fa-diamond-turn-right text-xs"></i>
+</button>
+</div>
+</article>
+<!-- BEGIN: StackedFloatingActionCluster -->
+<!-- Distinctive vertical action pill column as seen in IMAGE_12 right side -->
+<aside class="absolute right-7 bottom-8 flex flex-col items-center space-y-2.5 z-30" data-purpose="floating-action-column">
+<!-- Quick Action 1: Siren/Audio Alert -->
+<button aria-label="Toggle Siren" class="w-11 h-11 rounded-full bg-neutral-950/90 text-white border border-neutral-800 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<i class="fa-solid fa-bullhorn text-xs"></i>
+</button>
+<!-- Quick Action 2: Direct Doctor Dispatch Call -->
+<button aria-label="Call Hospital" class="w-11 h-11 rounded-full bg-neutral-950/90 text-white border border-neutral-800 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<i class="fa-solid fa-phone text-xs"></i>
+</button>
+<!-- Quick Action 3: Fast Triage Checklist -->
+<button aria-label="Triage Checklist" class="w-11 h-11 rounded-full bg-neutral-950/90 text-white border border-neutral-800 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<i class="fa-solid fa-clipboard-check text-xs"></i>
+</button>
+<!-- Quick Action 4: Central Emergency Beacon -->
+<button aria-label="SOS Alert" class="w-11 h-11 rounded-full bg-red-600 text-white border-2 border-white/20 flex items-center justify-center shadow-xl active:scale-90 transition-transform animate-pulse">
+<i class="fa-solid fa-radiation text-xs"></i>
+</button>
+</aside>
+<!-- END: StackedFloatingActionCluster -->
+</div>
+<!-- END: MainDispatchBody -->
+<!-- BEGIN: SecondaryUnitTile -->
+<!-- Lower dark rounded container referencing bottom modules in IMAGE_12 -->
+<section class="px-4 pb-2 z-10 flex-shrink-0" data-purpose="secondary-incoming-mission">
+<div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-3.5 flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-2xl bg-neutral-800 border border-neutral-700/60 flex items-center justify-center text-amber-400">
+<i class="fa-solid fa-triangle-exclamation text-sm"></i>
+</div>
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-xs font-bold text-white">Trauma Unit Queue</span>
+<span class="text-[9px] font-semibold bg-neutral-800 text-neutral-300 px-1.5 py-0.5 rounded-md">2 Pending</span>
+</div>
+<p class="text-[11px] text-neutral-400 truncate max-w-[200px]">Metro City Care: Bed 12 Reserved</p>
+</div>
+</div>
+<button class="px-3.5 py-2 bg-neutral-800 text-neutral-200 hover:text-white rounded-xl text-xs font-bold active:scale-95 transition-all">
+          View
+        </button>
+</div>
+</section>
+<!-- END: SecondaryUnitTile -->
+<!-- BEGIN: BottomStickyNavigation -->
+<!-- Pill Tab / Action bar at bottom mimicking the iOS dark pill aesthetic -->
+<nav class="px-5 pt-1 pb-6 z-20 flex-shrink-0" data-purpose="bottom-pill-dock">
+<div class="bg-neutral-900/90 backdrop-blur-md border border-neutral-800 rounded-full py-2 px-3 flex items-center justify-between shadow-2xl">
+<!-- Tab 1: Missions (Active) -->
+<button class="flex items-center space-x-2 bg-white text-black px-4 py-2 rounded-full font-bold text-xs tracking-tight transition-all">
+<i class="fa-solid fa-compass text-xs"></i>
+<span>Missions</span>
+</button>
+<!-- Tab 2: Map -->
+<button aria-label="Live Map" class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:text-white active:scale-90 transition-transform">
+<i class="fa-solid fa-map-location-dot text-sm"></i>
+</button>
+<!-- Tab 3: Comms -->
+<button aria-label="Comms Channel" class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:text-white active:scale-90 transition-transform relative">
+<i class="fa-solid fa-walkie-talkie text-sm"></i>
+<span class="absolute top-2 right-2 w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+</button>
+<!-- Tab 4: Profile / Unit Info -->
+<button aria-label="Driver Profile" class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:text-white active:scale-90 transition-transform">
+<i class="fa-solid fa-user-astronaut text-sm"></i>
+</button>
+</div>
+<!-- iOS Home Indicator bar -->
+<div class="w-32 h-1 bg-neutral-700/60 rounded-full mx-auto mt-4"></div>
+</nav>
+<!-- END: BottomStickyNavigation -->
+</main>
+<!-- END: MobileDeviceFrame -->
+</body></html>

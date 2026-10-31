@@ -200,4 +200,83 @@ describe('Complete E2E User Journey (Stages 1 to 8)', () => {
     const directVerify = verifyChain(state.audit);
     expect(directVerify.valid).toBe(true);
   });
+
+  test('validates Journeys C, E, and F (Verification Gate, News CMS, APK Releases)', async () => {
+    // ── Journey C: Driver Registration & Admin Verification Gate ────────────
+    // Use a unique phone per test run to avoid collisions with persisted store data.
+    const uniquePhone = `+91989800${Date.now().toString().slice(-4)}`;
+    const regRes = await fetch(`http://localhost:${port}/api/auth/driver/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: uniquePhone,
+        name: 'Suresh Parmar',
+        licenseNo: `GJ-01-2024-${Date.now().toString().slice(-6)}`,
+        vehicleNo: 'GJ-01-CZ-9999',
+        ambulanceType: 'ALS',
+      }),
+    });
+    expect(regRes.status).toBe(201);
+    const regData = await regRes.json() as any;
+    const driverId = regData.driver.id;
+    expect(regData.driver.isVerified).toBe(false);
+
+    // Attempt duty toggle while unverified -> HTTP 403 Forbidden
+    const dutyUnverified = await fetch(`http://localhost:${port}/api/driver/${driverId}/duty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isOnDuty: true }),
+    });
+    expect(dutyUnverified.status).toBe(403);
+
+    // Admin verifies driver
+    const verifyRes = await fetch(`http://localhost:${port}/api/admin/drivers/${driverId}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approve: true }),
+    });
+    expect(verifyRes.status).toBe(200);
+
+    // Now duty toggle succeeds -> HTTP 200 OK
+    const dutyVerified = await fetch(`http://localhost:${port}/api/driver/${driverId}/duty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isOnDuty: true }),
+    });
+    expect(dutyVerified.status).toBe(200);
+
+    // ── Journey E: Admin News CMS Publication & Citizen Retrieval ───────────
+    const newsRes = await fetch(`http://localhost:${port}/api/admin/updates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Ahmedabad Heatwave Advisory: Emergency Fluid Resupply',
+        category: 'GOVT_ALERT',
+        priority: 'HIGH',
+        body: 'Paramedics and citizen stations stocked with oral rehydration packs along SG Highway.',
+        officialSource: 'Gujarat Disaster Management Authority',
+      }),
+    });
+    expect(newsRes.status).toBe(201);
+    const newsData = await newsRes.json() as any;
+
+    // Citizen fetches published updates
+    const citNewsRes = await fetch(`http://localhost:${port}/api/updates`);
+    expect(citNewsRes.status).toBe(200);
+    const citNews = await citNewsRes.json() as any[];
+    expect(citNews.some(n => n.id === newsData.id)).toBe(true);
+
+    // ── Journey F: APK Release Metadata & Download Verification ────────────
+    const relRes = await fetch(`http://localhost:${port}/api/releases/latest/citizen`);
+    expect(relRes.status).toBe(200);
+    const relData = await relRes.json() as any;
+    expect(relData.fileName).toBe('SaHaay-Citizen.apk');
+    expect(relData.sha256).toBeDefined();
+
+    // Verify admin overview reflects all live metrics
+    const overviewRes = await fetch(`http://localhost:${port}/api/admin/overview`);
+    expect(overviewRes.status).toBe(200);
+    const overview = await overviewRes.json() as any;
+    expect(overview.totalAmbulances).toBeGreaterThan(0);
+  });
 });

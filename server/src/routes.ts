@@ -1,6 +1,7 @@
 /**
  * server/src/routes.ts
  * All REST API routes for the SaHaay dispatch server.
+ * Includes unified endpoints for Citizen, Driver, Admin, News CMS, and APK Releases.
  */
 
 import { Router, Request, Response } from 'express';
@@ -19,6 +20,14 @@ import { auditLog, verifyChain, tamperEntry } from './audit';
 import { seedAmbulances } from './seed';
 import { syncGrid, findAvailable } from './matching';
 import { broadcastToAll } from './ws';
+import { storage } from './storage';
+import {
+  authenticateCitizen,
+  registerDriver,
+  loginDriver,
+  loginAdmin,
+  verifySession,
+} from './auth';
 
 // Codec - inline the decode logic to avoid cross-package imports
 function crc8(input: string): string {
@@ -78,7 +87,204 @@ export function createRouter(): Router {
     });
   });
 
-  // ── Ambulances ──────────────────────────────────────────────────────────────
+  // ── Unified Auth & Profile Endpoints ─────────────────────────────────────────
+
+  // Citizen Authentication
+  router.post('/api/auth/citizen', (req: Request, res: Response) => {
+    const { phone, name } = req.body as { phone?: string; name?: string };
+    if (!phone) { res.status(400).json({ error: 'Phone number required' }); return; }
+    const result = authenticateCitizen(phone, name);
+    auditLog('CITIZEN_LOGIN', { citizenId: result.citizen.id, phone: result.citizen.phone });
+    res.json(result);
+  });
+
+  // Citizen Profile
+  router.get('/api/citizen/profile/:id', (req: Request, res: Response) => {
+    const citizen = storage.getCitizen(req.params.id);
+    if (!citizen) { res.status(404).json({ error: 'Citizen not found' }); return; }
+    res.json(citizen);
+  });
+
+  router.put('/api/citizen/profile/:id', (req: Request, res: Response) => {
+    const citizen = storage.getCitizen(req.params.id);
+    if (!citizen) { res.status(404).json({ error: 'Citizen not found' }); return; }
+    const updated = { ...citizen, ...req.body, id: citizen.id };
+    storage.saveCitizen(updated);
+    auditLog('CITIZEN_PROFILE_UPDATED', { citizenId: citizen.id });
+    res.json(updated);
+  });
+
+  // Driver Authentication
+  router.post('/api/auth/driver/register', (req: Request, res: Response) => {
+    const { phone, name, licenseNo, vehicleNo, ambulanceType } = req.body as {
+      phone?: string;
+      name?: string;
+      licenseNo?: string;
+      vehicleNo?: string;
+      ambulanceType?: 'BLS' | 'ALS' | 'ICU';
+    };
+    if (!phone || !name || !licenseNo || !vehicleNo) {
+      res.status(400).json({ error: 'All registration fields (phone, name, licenseNo, vehicleNo) are required' });
+      return;
+    }
+    const result = registerDriver({ phone, name, licenseNo, vehicleNo, ambulanceType });
+    auditLog('DRIVER_REGISTERED', { driverId: result.driver.id, verificationStatus: result.driver.verificationStatus });
+    res.status(201).json(result);
+  });
+
+  router.post('/api/auth/driver/login', (req: Request, res: Response) => {
+    const { phone } = req.body as { phone?: string };
+    if (!phone) { res.status(400).json({ error: 'Phone required' }); return; }
+    const result = loginDriver(phone);
+    if (!result) { res.status(404).json({ error: 'Driver account not found. Please register.' }); return; }
+    auditLog('DRIVER_LOGIN', { driverId: result.driver.id, isVerified: result.driver.isVerified });
+    res.json(result);
+  });
+
+  // Driver Duty Status Toggle (Mandatory Verification Gate!)
+  router.post('/api/driver/:id/duty', (req: Request, res: Response) => {
+    const driver = storage.getDriver(req.params.id);
+    if (!driver) { res.status(404).json({ error: 'Driver not found' }); return; }
+    const { isOnDuty } = req.body as { isOnDuty: boolean };
+
+    // Strict requirement: Unverified drivers cannot become dispatch-eligible!
+    if (isOnDuty && !driver.isVerified) {
+      res.status(403).json({
+        error: 'Driver verification pending. Active dispatch requires verified state credentials.',
+        verificationStatus: driver.verificationStatus,
+      });
+      return;
+    }
+
+    driver.isOnDuty = !!isOnDuty;
+    storage.saveDriver(driver);
+
+    // Sync to active ambulances map
+    if (driver.isOnDuty) {
+      state.ambulances.set(driver.id, {
+        id: driver.id,
+        driverName: driver.name,
+        vehicleNo: driver.vehicleNo,
+        lat: driver.currentLat,
+        lon: driver.currentLon,
+        status: 'AVAILABLE',
+        heading: driver.heading,
+        speedKmh: driver.speedKmh,
+        zone: 'Ahmedabad Central',
+      });
+    } else {
+      const amb = state.ambulances.get(driver.id);
+      if (amb && amb.status === 'AVAILABLE') {
+        amb.status = 'OFFLINE';
+      }
+    }
+    syncGrid(state.ambulances);
+    auditLog('DRIVER_DUTY_CHANGED', { driverId: driver.id, isOnDuty: driver.isOnDuty });
+    res.json({ ok: true, driver });
+  });
+
+  // Admin Authentication
+  router.post('/api/auth/admin/login', (req: Request, res: Response) => {
+    const { email, password } = req.body as { email?: string; password?: string };
+    if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
+    const result = loginAdmin(email, password);
+    if (!result) { res.status(401).json({ error: 'Invalid admin credentials' }); return; }
+    auditLog('ADMIN_LOGIN', { email });
+    res.json(result);
+  });
+
+  // ── News & Awareness CMS (Powers Citizen Updates Screen 04) ──────────────────
+
+  router.get('/api/updates', (_req: Request, res: Response) => {
+    res.json(storage.listNews(true));
+  });
+
+  router.get('/api/admin/updates', (_req: Request, res: Response) => {
+    res.json(storage.listNews(false));
+  });
+
+  router.post('/api/admin/updates', (req: Request, res: Response) => {
+    const { title, category, priority, body, sourceUrl, officialSource, isPinned } = req.body;
+    if (!title || !body) { res.status(400).json({ error: 'Title and body required' }); return; }
+    const post = {
+      id: `news-${Date.now()}`,
+      title,
+      category: category || 'GOVT_ALERT',
+      priority: priority || 'NORMAL',
+      body,
+      sourceUrl: sourceUrl || 'https://gujhealth.gujarat.gov.in',
+      officialSource: officialSource || 'Gujarat Emergency Health Directorate',
+      isPinned: !!isPinned,
+      status: 'PUBLISHED' as const,
+      publishedAt: Date.now(),
+      createdAt: Date.now(),
+    };
+    storage.saveNews(post);
+    auditLog('NEWS_PUBLISHED', { postId: post.id, title: post.title });
+    broadcastToAll({ type: 'NEWS_UPDATE', post });
+    res.status(201).json(post);
+  });
+
+  router.delete('/api/admin/updates/:id', (req: Request, res: Response) => {
+    const success = storage.deleteNews(req.params.id);
+    if (!success) { res.status(404).json({ error: 'Post not found' }); return; }
+    auditLog('NEWS_DELETED', { postId: req.params.id });
+    res.json({ ok: true });
+  });
+
+  // ── APK Release Management ───────────────────────────────────────────────────
+
+  router.get('/api/releases', (_req: Request, res: Response) => {
+    res.json(storage.listReleases());
+  });
+
+  router.get('/api/releases/latest/:appType', (req: Request, res: Response) => {
+    const rel = storage.getRelease(req.params.appType as 'citizen' | 'driver');
+    if (!rel) { res.status(404).json({ error: 'No published release found' }); return; }
+    res.json(rel);
+  });
+
+  // ── Admin Fleet & Driver Management ──────────────────────────────────────────
+
+  router.get('/api/admin/overview', (_req: Request, res: Response) => {
+    const allMissions = Array.from(state.missions.values());
+    const allAmbulances = Array.from(state.ambulances.values());
+    const drivers = storage.listDrivers();
+    const citizens = storage.listCitizens();
+
+    res.json({
+      activeEmergencies: allMissions.filter(m => m.status === 'SEARCHING' || m.status === 'DISPATCHING').length,
+      assignedMissions: allMissions.filter(m => m.status === 'ASSIGNED' || m.status === 'ON_SCENE' || m.status === 'TRANSPORTING').length,
+      completedMissions: allMissions.filter(m => m.status === 'COMPLETED').length,
+      totalAmbulances: allAmbulances.length,
+      availableAmbulances: allAmbulances.filter(a => a.status === 'AVAILABLE').length,
+      busyAmbulances: allAmbulances.filter(a => a.status === 'ENROUTE' || a.status === 'ON_SCENE').length,
+      verifiedDrivers: drivers.filter(d => d.isVerified).length,
+      pendingDrivers: drivers.filter(d => !d.isVerified).length,
+      registeredCitizens: citizens.length,
+    });
+  });
+
+  router.get('/api/admin/drivers', (_req: Request, res: Response) => {
+    res.json(storage.listDrivers());
+  });
+
+  router.post('/api/admin/drivers/:id/verify', (req: Request, res: Response) => {
+    const driver = storage.getDriver(req.params.id);
+    if (!driver) { res.status(404).json({ error: 'Driver not found' }); return; }
+    const { approve } = req.body as { approve: boolean };
+    driver.isVerified = !!approve;
+    driver.verificationStatus = approve ? 'VERIFIED' : 'REJECTED';
+    storage.saveDriver(driver);
+    auditLog('DRIVER_VERIFICATION_EVALUATED', { driverId: driver.id, isVerified: driver.isVerified, status: driver.verificationStatus });
+    res.json({ ok: true, driver });
+  });
+
+  router.get('/api/admin/citizens', (_req: Request, res: Response) => {
+    res.json(storage.listCitizens());
+  });
+
+  // ── Ambulances (Existing routes preserved for tests) ─────────────────────────
   router.get('/ambulances', (_req: Request, res: Response) => {
     res.json(Array.from(state.ambulances.values()));
   });
@@ -95,7 +301,7 @@ export function createRouter(): Router {
     res.json({ ok: true });
   });
 
-  // ── Missions ─────────────────────────────────────────────────────────────────
+  // ── Missions (Single source of truth) ─────────────────────────────────────────
   router.get('/missions', (_req: Request, res: Response) => {
     res.json(Array.from(state.missions.values()));
   });
@@ -110,7 +316,6 @@ export function createRouter(): Router {
     const { lat, lon, addrId = 0, flags = 0, sosUid } = req.body as { lat: number; lon: number; addrId?: number; flags?: number; sosUid?: string };
     if (lat === undefined || lon === undefined) { res.status(400).json({ error: 'lat and lon required' }); return; }
 
-    // Idempotency: same sosUid should not create a second mission
     const uid = sosUid ?? `manual-${Date.now()}`;
     if (seenSosUids.has(uid)) {
       const existing = Array.from(state.missions.values()).find(m => m.sosUid === uid);
@@ -139,7 +344,6 @@ export function createRouter(): Router {
     const mission = createMission({ patientLat: lat, patientLon: lon, addrId, flags, sosUid: uid });
     res.status(201).json({ ok: true, missionId: mission.id, status: mission.status });
   });
-
 
   router.post('/missions/:id/accept', (req: Request, res: Response) => {
     const { ambulanceId } = req.body as { ambulanceId: string };
@@ -206,7 +410,7 @@ export function createRouter(): Router {
     res.json({ ok: true });
   });
 
-  // ── SMS Inbound (SimulatedCarrier / real Twilio webhook) ────────────────────
+  // ── SMS Inbound ─────────────────────────────────────────────────────────────
   router.get('/sms/inbound', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
@@ -218,19 +422,16 @@ export function createRouter(): Router {
   });
 
   router.post('/sms/inbound', (req: Request, res: Response) => {
-    // Accepts both: JSON body { token } or form body (Twilio-style: Body=<token>)
     const token: string = (req.body.token ?? req.body.Body ?? '').trim();
     if (!token) { res.status(400).json({ error: 'token required (JSON: {token} or form: Body=)' }); return; }
 
     const decoded = decodeSmsToken(token);
     if (!decoded.ok) {
       auditLog('SMS_INBOUND_REJECTED', { token, reason: decoded.reason });
-      // Reply like an SMS gateway would (show in UI as SIMULATED reply)
       res.json({ ok: false, smsReply: `SOS FAILED: ${decoded.reason}` });
       return;
     }
 
-    // Idempotency: same sosUid
     if (seenSosUids.has(decoded.uid)) {
       const existing = Array.from(state.missions.values()).find(m => m.sosUid === decoded.uid);
       res.json({ ok: true, smsReply: `SOS DUP: MID ${existing?.id ?? '?'}`, missionId: existing?.id, idempotent: true });
@@ -248,10 +449,8 @@ export function createRouter(): Router {
       sosUid: decoded.uid,
     });
 
-    // Short confirmation SMS text (what the server would send back via real gateway)
     const smsReply = `SaHaay: MID ${mission.id}. Searching ambulance. Stay calm.`;
-
-    res.json({ ok: true, missionId: mission.id, smsReply }); // [SIMULATED reply]
+    res.json({ ok: true, missionId: mission.id, smsReply });
   });
 
   // ── Audit Log ───────────────────────────────────────────────────────────────
@@ -264,7 +463,6 @@ export function createRouter(): Router {
   });
 
   router.post('/audit/tamper', (req: Request, res: Response) => {
-    // DEMO ONLY: tamper an entry to demonstrate verification failure
     const { index } = req.body as { index: number };
     const entry = tamperEntry(index ?? 0);
     if (!entry) { res.status(404).json({ error: 'entry not found' }); return; }

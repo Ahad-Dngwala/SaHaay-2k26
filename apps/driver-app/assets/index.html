@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SaHaay Driver</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0c0d10] text-white h-screen w-screen flex flex-col justify-between overflow-hidden select-none">
+
+  <!-- ── Dynamic Content Container ───────────────────────────────────── -->
+  <div id="app-container" class="relative flex-1 w-full h-full overflow-hidden flex flex-col">
+
+    <!-- ── 1. DRIVER MAIN HOME (Based on 06_visual_reference_dark_explore_ui) ── -->
+    <div id="screen-home" class="screen-view active flex-1 flex flex-col justify-between p-4 bg-[#0c0d10] overflow-y-auto no-scrollbar">
+      <!-- Header Section -->
+      <div class="relative pt-2 px-2 flex items-center justify-between z-20">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/20 bg-slate-800 flex items-center justify-center font-bold text-xs text-white">
+            RP
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white" id="driver-display-name">Ramesh Patel</div>
+            <div class="text-[9px] text-slate-400">AMB-GJ01-4020 • ALS Unit</div>
+          </div>
+        </div>
+
+        <div id="verification-badge" class="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          ● VERIFIED
+        </div>
+      </div>
+
+      <!-- Central On-Duty Radar Dome (Voice Dome Repurposed) -->
+      <div class="relative flex flex-col items-center justify-center my-auto py-4 z-20">
+        <div id="duty-radar-dome" onclick="toggleDutyStatus()" class="voice-dome active relative w-48 h-48 rounded-full flex flex-col items-center justify-center cursor-pointer p-4 select-none">
+          <div class="text-[10px] text-slate-400 font-medium mb-1" id="duty-subtext">PARAMEDIC DUTY</div>
+          <div class="text-base font-black text-white tracking-wide" id="duty-status-text">ON DUTY</div>
+          
+          <!-- Sound / Telemetry wave bars -->
+          <div class="flex items-center justify-center gap-1.5 h-8 mt-2">
+            <span class="sound-bar w-1 bg-emerald-400 rounded-full h-3"></span>
+            <span class="sound-bar w-1 bg-emerald-400 rounded-full h-6"></span>
+            <span class="sound-bar w-1 bg-emerald-400 rounded-full h-8"></span>
+            <span class="sound-bar w-1 bg-emerald-400 rounded-full h-5"></span>
+            <span class="sound-bar w-1 bg-emerald-400 rounded-full h-2"></span>
+          </div>
+          <div class="text-[8px] text-emerald-400 font-mono mt-2" id="duty-hint">GPS SCANNING ACTIVE</div>
+        </div>
+
+        <!-- Verification Gate Warning Notice if unverified -->
+        <div id="unverified-warning" class="hidden mt-4 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-center max-w-xs text-xs text-amber-300">
+          ⚠️ <strong>State Verification Pending:</strong> Your license is being reviewed by Ahmedabad EMS control. On-duty activation is disabled.
+        </div>
+      </div>
+
+      <!-- Driver Operations Grid (Explore Cards Repurposed) -->
+      <div class="relative z-20 pb-2">
+        <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider px-1">Responder Operations</h3>
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Card 1: Active Mission -->
+          <div onclick="navigateTo('navigation')" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-sm mb-2">
+              🚨
+            </div>
+            <h4 class="text-xs font-semibold text-white">Active Mission</h4>
+            <p class="text-[9px] text-slate-400 mt-0.5">Navrangpura Code Red</p>
+          </div>
+
+          <!-- Card 2: Pickup Navigation -->
+          <div onclick="navigateTo('navigation')" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm mb-2">
+              🗺️
+            </div>
+            <h4 class="text-xs font-semibold text-white">GPS Navigation</h4>
+            <p class="text-[9px] text-slate-400 mt-0.5">Live turn-by-turn route</p>
+          </div>
+
+          <!-- Card 3: Patient Triage -->
+          <div onclick="openPatientModal()" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm mb-2">
+              📋
+            </div>
+            <h4 class="text-xs font-semibold text-white">Patient Intake</h4>
+            <p class="text-[9px] text-slate-400 mt-0.5">Vitals & pre-arrival info</p>
+          </div>
+
+          <!-- Card 4: Report Breakdown -->
+          <div onclick="openBreakdownModal()" class="bg-[#16181f] p-3 rounded-2xl border border-white/5 active:scale-[0.98] transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm mb-2">
+              ⚠️
+            </div>
+            <h4 class="text-xs font-semibold text-white">Breakdown</h4>
+            <p class="text-[9px] text-slate-400 mt-0.5">Trigger auto replacement</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. DRIVER ACTIVE MISSION NAVIGATION (Shared 02_citizen_tracking) ── -->
+    <div id="screen-navigation" class="screen-view hidden flex-1 flex flex-col justify-between bg-white text-slate-900">
+      <!-- Header -->
+      <div class="px-5 pt-3 pb-2 flex items-center justify-between bg-white/95 border-b border-slate-100 z-10">
+        <button onclick="navigateTo('home')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700">
+          ❮
+        </button>
+        <div class="text-center">
+          <h2 class="text-xs font-bold text-slate-800">Dispatch Navigation</h2>
+          <p class="text-[9px] text-red-600 font-bold uppercase" id="nav-stage-badge">EN ROUTE TO PATIENT</p>
+        </div>
+        <button onclick="openBreakdownModal()" class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded-lg">
+          Breakdown
+        </button>
+      </div>
+
+      <!-- Map View with Ahmedabad Canvas -->
+      <div class="relative flex-1 map-background overflow-hidden flex items-center justify-center">
+        <!-- SVG Roads -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400" preserveAspectRatio="none">
+          <path d="M 0 100 Q 200 120 400 80" stroke="#ffffff" stroke-width="8" fill="none" />
+          <path d="M 120 0 L 140 400" stroke="#ffffff" stroke-width="12" fill="none" />
+          <path d="M 280 0 L 260 400" stroke="#ffffff" stroke-width="10" fill="none" />
+          <path d="M 0 250 C 150 240, 250 260, 400 230" stroke="#ffffff" stroke-width="14" fill="none" />
+          <path d="M 140 90 L 140 180 Q 140 250 250 250" stroke="#ea3836" stroke-width="4" stroke-dasharray="6,4" fill="none" />
+        </svg>
+
+        <!-- Driver Ambulance Marker -->
+        <div class="absolute top-[85px] left-[130px] flex items-center justify-center">
+          <div class="w-10 h-10 rounded-2xl bg-[#090d16] border-2 border-white shadow-xl flex items-center justify-center text-lg">
+            🚑
+          </div>
+        </div>
+
+        <!-- Patient Destination Marker -->
+        <div class="absolute top-[230px] left-[230px] flex items-center justify-center">
+          <div class="w-8 h-8 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs">
+            📍
+          </div>
+        </div>
+
+        <!-- Road Label -->
+        <div class="absolute top-12 left-6 text-[9px] font-bold text-slate-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
+          NAVRANGPURA TO ASHRAM ROAD
+        </div>
+      </div>
+
+      <!-- Driver Mission Action Panel -->
+      <div class="p-5 bg-white border-t border-slate-200/80 shadow-2xl rounded-t-3xl z-10">
+        <div class="flex items-center justify-between pb-3">
+          <div>
+            <span class="text-xs font-semibold text-slate-500">Patient Pickup Location</span>
+            <h3 class="text-sm font-extrabold text-slate-900 mt-0.5">Navrangpura Cross, Ahmedabad</h3>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400 block">ETA</span>
+            <span class="text-sm font-black text-red-600">3 min (1.2 km)</span>
+          </div>
+        </div>
+
+        <!-- Stage Progression Button -->
+        <button id="stage-action-btn" onclick="advanceMissionStage()" class="w-full mt-2 py-3.5 bg-[#eb3824] hover:bg-[#d42c19] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-500/25 flex items-center justify-center space-x-2 transition-all">
+          <span>ARRIVED AT PATIENT (STEP 1)</span>
+          <span>➔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── 3. INCOMING MISSION OFFER MODAL ── -->
+    <div id="incoming-offer-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center mb-4 animate-bounce">
+        <span class="text-2xl">🚨</span>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-widest text-red-500">INCOMING EMERGENCY MISSION</span>
+      <h2 class="text-xl font-black text-white mt-1">Code Red — Urgent Dispatch</h2>
+      <div class="bg-[#16181f] border border-slate-800 rounded-2xl p-4 my-4 w-full max-w-xs text-left text-xs space-y-1.5">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Locality:</span>
+          <span class="text-white font-bold">Navrangpura, Ahmedabad</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Distance:</span>
+          <span class="text-emerald-400 font-bold">1.2 km</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Estimated Route:</span>
+          <span class="text-sky-400 font-bold">3 minutes</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Patient Vitals:</span>
+          <span class="text-amber-300">Conscious, severe laceration</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 w-full max-w-xs">
+        <button onclick="declineIncomingMission()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition-all">
+          DECLINE
+        </button>
+        <button onclick="acceptIncomingMission()" class="flex-1 py-3 bg-[#eb3824] hover:bg-[#d42c19] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-500/30 transition-all">
+          ACCEPT MISSION
+        </button>
+      </div>
+    </div>
+
+    <!-- ── 4. VEHICLE BREAKDOWN REPORTING MODAL ── -->
+    <div id="breakdown-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center mb-4">
+        <span class="text-2xl">⚠️</span>
+      </div>
+      <h2 class="text-lg font-bold text-white">Report Vehicle Breakdown</h2>
+      <p class="text-xs text-slate-400 max-w-xs my-3">
+        Reporting a breakdown will immediately re-dispatch a replacement ambulance to the patient from the nearest available unit.
+      </p>
+      <div class="flex items-center gap-3 w-full max-w-xs mt-3">
+        <button onclick="closeBreakdownModal()" class="flex-1 py-3 bg-slate-800 text-slate-300 font-semibold text-xs rounded-xl">
+          CANCEL
+        </button>
+        <button onclick="confirmVehicleBreakdown()" class="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl">
+          CONFIRM BREAKDOWN
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Driver Bottom Dock (From 06_visual_reference_dark_explore_ui) ── -->
+  <footer class="bg-[#1a1c22]/95 border-t border-white/10 px-6 py-2.5 flex items-center justify-around z-30">
+    <button onclick="navigateTo('home')" class="nav-btn flex flex-col items-center text-white" data-target="home">
+      <span class="text-base">⚡</span>
+      <span class="text-[9px] font-semibold mt-0.5">Duty</span>
+    </button>
+    <button onclick="navigateTo('navigation')" class="nav-btn flex flex-col items-center text-zinc-400" data-target="navigation">
+      <span class="text-base">🗺️</span>
+      <span class="text-[9px] font-semibold mt-0.5">Nav</span>
+    </button>
+    <button onclick="showSimulationOffer()" class="nav-btn flex flex-col items-center text-zinc-400" title="Simulate Emergency Dispatch">
+      <span class="text-base">🚨</span>
+      <span class="text-[9px] font-semibold mt-0.5">Offer</span>
+    </button>
+    <button onclick="openBreakdownModal()" class="nav-btn flex flex-col items-center text-zinc-400">
+      <span class="text-base">⚠️</span>
+      <span class="text-[9px] font-semibold mt-0.5">Safety</span>
+    </button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

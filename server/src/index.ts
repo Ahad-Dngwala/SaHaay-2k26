@@ -8,6 +8,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import { WebSocketServer } from 'ws';
 import { Config } from './config-server';
 import { initWss } from './ws';
@@ -24,6 +25,13 @@ const server = http.createServer(app);
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Downloads (APKs) ────────────────────────────────────────────────────────
+const apkDir = path.join(__dirname, '../../artifacts/apk');
+if (!fs.existsSync(apkDir)) {
+  fs.mkdirSync(apkDir, { recursive: true });
+}
+app.use('/downloads', express.static(apkDir));
 
 // ── Control Dashboard (served at /control) ────────────────────────────────────
 app.get('/control', (_req, res) => {

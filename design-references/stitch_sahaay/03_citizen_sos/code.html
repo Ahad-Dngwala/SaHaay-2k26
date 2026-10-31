@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Emergency SOS Interface</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appDark: '#080d15',
+            appCard: '#131b2a',
+            appSurface: '#162033',
+            emergencyRed: '#eb3824',
+            neonGreen: '#5cd67c',
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-shadows-and-depth">
+    /* Physical 3D Emergency Plate Bevel & Shadow */
+    .plate-bezel {
+      background: linear-gradient(145deg, #1b222d, #0d121a);
+      box-shadow: 
+        0 24px 48px -8px rgba(0, 0, 0, 0.8),
+        0 12px 24px -6px rgba(0, 0, 0, 0.6),
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -2px 4px 0 rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .plate-inner {
+      background: radial-gradient(circle at 50% 20%, #151a22 0%, #0d1117 100%);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+    }
+
+    /* 3D button button press / top highlight */
+    .btn-top-white {
+      box-shadow: 
+        0 8px 18px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .btn-bottom-sos {
+      background: linear-gradient(180deg, #f2462e 0%, #d82b18 100%);
+      box-shadow: 
+        0 8px 20px rgba(220, 40, 20, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+    }
+
+    .green-floating-btn {
+      box-shadow: 0 4px 20px rgba(92, 214, 124, 0.4);
+    }
+
+    .bottom-white-action {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="bg-[#121620] flex items-center justify-center min-h-screen p-0 sm:p-6 antialiased select-none font-sans">
+<!-- BEGIN: Phone Mockup Container -->
+<main class="relative w-full max-w-[390px] h-[844px] bg-[#090d16] text-white rounded-[50px] overflow-hidden shadow-2xl border-[5px] border-[#222938] flex flex-col justify-between">
+<!-- Background subtle radial ambient gradients -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="absolute top-[8%] left-[20%] w-[280px] h-[280px] bg-blue-900/15 rounded-full blur-[80px]"></div>
+<div class="absolute top-[35%] right-[5%] w-[240px] h-[240px] bg-sky-950/20 rounded-full blur-[90px]"></div>
+<div class="absolute bottom-[10%] left-[10%] w-[300px] h-[220px] bg-[#0c1a2e]/40 rounded-full blur-[70px]"></div>
+</div>
+<!-- BEGIN: iOS Status Bar -->
+<header class="relative z-20 pt-3 px-8 flex justify-between items-center text-sm font-semibold tracking-tight text-white/90">
+<!-- Time -->
+<span class="text-[15px] font-medium tracking-tight">9:41</span>
+<!-- Dynamic Island / Speaker cutout simulation -->
+<div class="absolute left-1/2 -translate-x-1/2 top-2.5 w-24 h-6 bg-black rounded-full flex items-center justify-end pr-2 space-x-1">
+<span class="w-2.5 h-2.5 rounded-full bg-[#111928] block"></span>
+</div>
+<!-- Status Icons -->
+<div class="flex items-center space-x-1.5 text-xs">
+<!-- Cellular Signal -->
+<svg class="w-4 h-4 fill-current" viewbox="0 0 24 24">
+<path d="M2 17h2.5v4H2v-4zm4.5-3H9v7H6.5v-7zm4.5-3H13v10h-2v-10zm4.5-4H18v14h-2.5V7z"></path>
+</svg>
+<!-- Wifi -->
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.5c3.78 0 7.21 1.5 9.77 3.93L12 18.27 2.23 11.43C4.79 9 8.22 7.5 12 7.5z"></path>
+</svg>
+<!-- Battery Icon -->
+<div class="w-5 h-2.5 border border-white/80 rounded-[3px] p-[1px] flex items-center relative">
+<div class="w-full h-full bg-white rounded-[1px]"></div>
+<div class="absolute -right-1 top-0.5 w-[2px] h-1.5 bg-white/80 rounded-r-sm"></div>
+</div>
+</div>
+</header>
+<!-- END: iOS Status Bar -->
+<!-- BEGIN: Header Navigation Area -->
+<div class="relative z-10 px-7 pt-4 flex items-center justify-between">
+<!-- Background Concentric Circles Artwork on Left -->
+<div class="relative w-14 h-14 flex items-center justify-center opacity-30">
+<div class="absolute w-12 h-12 rounded-full border border-sky-400/40"></div>
+<div class="absolute w-7 h-7 rounded-full border border-sky-300/30"></div>
+<div class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border border-sky-200/25"></div>
+</div>
+<!-- Section Title -->
+<h1 class="text-sm font-medium text-slate-400 tracking-wide">Emergency</h1>
+<!-- Green Add Action Button -->
+<button aria-label="Add contact or device" class="w-11 h-11 bg-neonGreen rounded-full flex items-center justify-center text-slate-950 font-semibold green-floating-btn active:scale-95 transition-transform duration-150" type="button">
+<svg class="w-5 h-5 text-gray-900 stroke-[2.5]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- END: Header Navigation Area -->
+<!-- BEGIN: Central Emergency Widget Section -->
+<section class="relative z-10 flex flex-col items-center justify-center px-6 mt-2">
+<!-- Outer 3D Squircle Beveled Plate -->
+<div class="w-[245px] h-[245px] plate-bezel rounded-[44px] p-3.5 flex items-center justify-center relative">
+<!-- Inner Well -->
+<div class="w-full h-full plate-inner rounded-[34px] p-2.5 flex flex-col justify-between items-stretch">
+<!-- Top 112 Dial Button -->
+<button class="w-full h-[88px] bg-white rounded-[22px] flex items-center justify-center btn-top-white active:opacity-90 active:scale-[0.98] transition" type="button">
+<span class="text-[44px] font-bold text-black tracking-tight leading-none font-sans">112</span>
+</button>
+<!-- Bottom SOS Action Button -->
+<button class="w-full h-[88px] btn-bottom-sos rounded-[22px] flex items-center justify-center active:opacity-90 active:scale-[0.98] transition" type="button">
+<span class="text-[38px] font-extrabold text-white tracking-wider leading-none">SOS</span>
+</button>
+</div>
+</div>
+<!-- Carousel Pagination Dots -->
+<div class="flex items-center space-x-2 mt-7">
+<span class="w-1 h-1 rounded-full bg-slate-600 block"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-white block shadow-sm"></span>
+<span class="w-1 h-1 rounded-full bg-slate-600 block"></span>
+<span class="w-1 h-1 rounded-full bg-slate-600 block"></span>
+</div>
+</section>
+<!-- END: Central Emergency Widget Section -->
+<!-- BEGIN: Menu Navigation List Card -->
+<section class="relative z-10 px-5 mb-3">
+<div class="bg-[#0f1726]/85 backdrop-blur-md rounded-[28px] p-2 border border-slate-800/80 shadow-lg space-y-1">
+<!-- Menu Item 1: My device -->
+<a class="flex items-center justify-between px-3.5 py-3 rounded-2xl hover:bg-slate-800/40 active:bg-slate-800/60 transition group" href="#my-device">
+<div class="flex items-center space-x-3.5">
+<!-- Icon -->
+<div class="w-7 h-7 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-slate-200">
+<svg class="w-5 h-5 stroke-[1.6]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<rect height="16" rx="5" width="16" x="4" y="4"></rect>
+<path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- Label -->
+<span class="text-[15px] font-medium text-slate-200">My device</span>
+</div>
+<!-- Chevron Arrow -->
+<svg class="w-4 h-4 text-slate-500 stroke-[2.2]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</a>
+<!-- Menu Item 2: Archive -->
+<a class="flex items-center justify-between px-3.5 py-3 rounded-2xl hover:bg-slate-800/40 active:bg-slate-800/60 transition group" href="#archive">
+<div class="flex items-center space-x-3.5">
+<!-- Icon -->
+<div class="w-7 h-7 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-slate-200">
+<svg class="w-5 h-5 stroke-[1.6]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<rect height="16" rx="4" width="16" x="4" y="4"></rect>
+<path d="M8 9h8M8 12h8M8 15h5" stroke-linecap="round"></path>
+</svg>
+</div>
+<!-- Label -->
+<span class="text-[15px] font-medium text-slate-200">Archive</span>
+</div>
+<!-- Chevron Arrow -->
+<svg class="w-4 h-4 text-slate-500 stroke-[2.2]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</a>
+</div>
+</section>
+<!-- END: Menu Navigation List Card -->
+<!-- BEGIN: Bottom Tab Navigation Bar -->
+<nav class="relative z-10 w-full px-6 pt-2 pb-7 bg-gradient-to-t from-[#05080f] via-[#090e18] to-transparent">
+<div class="flex items-center justify-between px-2">
+<!-- Tab: Map -->
+<a class="flex flex-col items-center group space-y-1.5" href="#map">
+<div class="text-slate-400 group-hover:text-white transition">
+<svg class="w-5 h-5 stroke-[1.8]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<rect height="16" rx="4" stroke-dasharray="2 2" width="16" x="4" y="4"></rect>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+</div>
+<span class="text-[11px] font-normal text-slate-400 group-hover:text-white">Map</span>
+</a>
+<!-- Tab: Feed -->
+<a class="flex flex-col items-center group space-y-1.5" href="#feed">
+<div class="text-slate-400 group-hover:text-white transition">
+<svg class="w-5 h-5 stroke-[1.8]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<rect height="4" rx="2" width="14" x="5" y="6"></rect>
+<rect height="4" rx="2" width="14" x="5" y="14"></rect>
+</svg>
+</div>
+<span class="text-[11px] font-normal text-slate-400 group-hover:text-white">Feed</span>
+</a>
+<!-- Tab: Chat -->
+<a class="flex flex-col items-center group space-y-1.5" href="#chat">
+<div class="text-slate-400 group-hover:text-white transition">
+<svg class="w-5 h-5 stroke-[1.8]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[11px] font-normal text-slate-400 group-hover:text-white">Chat</span>
+</a>
+<!-- Elevated Floating Tab Button: Layers/Stack -->
+<button aria-label="Layers view" class="w-11 h-11 bg-white rounded-full flex items-center justify-center bottom-white-action active:scale-95 transition-transform duration-150" type="button">
+<svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M6.5 7.5L12 4.5l5.5 3-5.5 3-5.5-3z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M6.5 12L12 15l5.5-3" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M6.5 16.5L12 19.5l5.5-3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- iOS Home Indicator -->
+<div class="w-32 h-1 bg-white/30 rounded-full mx-auto mt-4"></div>
+</nav>
+<!-- END: Bottom Tab Navigation Bar -->
+</main>
+<!-- END: Phone Mockup Container -->
+</body></html>

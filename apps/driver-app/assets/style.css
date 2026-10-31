@@ -1,0 +1,57 @@
+@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Roboto, "Segoe UI", sans-serif;
+  background-color: #0c0d10;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 06_visual_reference_dark_explore_ui styles */
+.voice-dome {
+  background: radial-gradient(circle at 50% 45%, rgba(28, 31, 38, 0.85) 0%, rgba(17, 19, 23, 0.98) 75%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+              inset 0 1px 2px rgba(255, 255, 255, 0.18),
+              inset 0 -2px 10px rgba(0, 0, 0, 0.6),
+              0 20px 40px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.voice-dome.active {
+  box-shadow: 0 0 0 2px rgba(36, 161, 115, 0.6),
+              0 0 35px rgba(36, 161, 115, 0.35),
+              inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+@keyframes wave-bounce {
+  0%, 100% { height: 8px; }
+  50% { height: 26px; }
+}
+
+.sound-bar {
+  transition: height 0.2s ease;
+}
+
+.voice-dome.active .sound-bar:nth-child(1) { animation: wave-bounce 0.8s ease-in-out infinite 0.1s; }
+.voice-dome.active .sound-bar:nth-child(2) { animation: wave-bounce 0.8s ease-in-out infinite 0.25s; }
+.voice-dome.active .sound-bar:nth-child(3) { animation: wave-bounce 0.8s ease-in-out infinite 0.0s; }
+.voice-dome.active .sound-bar:nth-child(4) { animation: wave-bounce 0.8s ease-in-out infinite 0.35s; }
+.voice-dome.active .sound-bar:nth-child(5) { animation: wave-bounce 0.8s ease-in-out infinite 0.15s; }
+
+/* 02_citizen_tracking animations */
+.map-background {
+  background-color: #f4f3f0;
+  background-image: 
+    radial-gradient(#e1e0db 1px, transparent 1px),
+    linear-gradient(to right, #ecebe6 1px, transparent 1px),
+    linear-gradient(to bottom, #ecebe6 1px, transparent 1px);
+  background-size: 20px 20px, 40px 40px, 40px 40px;
+}

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SaHaay Citizen</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#08080a] text-white h-screen w-screen flex flex-col justify-between overflow-hidden select-none">
+
+  <!-- ── Dynamic Content Container ───────────────────────────────────── -->
+  <div id="app-container" class="relative flex-1 w-full h-full overflow-hidden flex flex-col">
+
+    <!-- ── 1. CITIZEN MAIN HOME (Based on 05_visual_reference_social_ui) ── -->
+    <div id="screen-home" class="screen-view active flex-1 flex flex-col justify-between p-4 bg-[#08080a] overflow-y-auto no-scrollbar">
+      <!-- App Header -->
+      <div class="flex items-center justify-between pt-2 pb-2 px-1 text-white">
+        <div class="flex items-center space-x-2">
+          <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-[#17171c] border border-white/10 text-red-500 font-bold text-sm">
+            🚑
+          </div>
+          <div>
+            <div class="text-xs font-bold tracking-tight">SaHaay Emergency</div>
+            <div class="text-[9px] text-emerald-400">● Mesh Protection Active</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="triggerCrashSimulation()" class="px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-semibold">
+            ⚡ Crash Test
+          </button>
+        </div>
+      </div>
+
+      <!-- Emergency Contacts Avatar Rail (Repurposed Story Avatars) -->
+      <div class="flex items-center justify-between gap-2 py-2 px-0.5">
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-500 to-orange-500 p-0.5">
+            <div class="w-full h-full rounded-2xl bg-[#18181e] flex items-center justify-center text-sm font-bold">108</div>
+          </div>
+          <span class="text-[9px] text-gray-400">Govt EMS</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 p-0.5">
+            <div class="w-full h-full rounded-2xl bg-[#18181e] flex items-center justify-center text-sm font-bold">112</div>
+          </div>
+          <span class="text-[9px] text-gray-400">Police/Fire</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-500 p-0.5">
+            <div class="w-full h-full rounded-2xl bg-[#18181e] flex items-center justify-center text-sm">👩‍⚕️</div>
+          </div>
+          <span class="text-[9px] text-gray-400">Dr. Priya</span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-500 p-0.5">
+            <div class="w-full h-full rounded-2xl bg-[#18181e] flex items-center justify-center text-sm">🏥</div>
+          </div>
+          <span class="text-[9px] text-gray-400">Civil Hosp</span>
+        </div>
+      </div>
+
+      <!-- Main Readiness Showcase Card (Reference 05 Dare Card Adaptation) -->
+      <div class="mt-2 relative flex-1 bg-white text-black rounded-3xl p-5 flex flex-col justify-between overflow-hidden shadow-2xl min-h-[300px]">
+        <div class="relative z-10 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center text-lg">
+              🛡️
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-gray-900" id="citizen-name">Aarav Patel</h3>
+              <p class="text-[10px] text-gray-500">Blood: <span class="font-bold text-red-600">B+</span> • Diabetic Type-1</p>
+            </div>
+          </div>
+          <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+            READY
+          </span>
+        </div>
+
+        <!-- Vertical Action Rail (Reference 05 exact position) -->
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2.5">
+          <div onclick="call112()" class="w-9 h-9 rounded-full bg-black/85 text-white flex items-center justify-center shadow cursor-pointer text-xs font-bold" title="Call 112">
+            📞
+          </div>
+          <div onclick="navigateTo('sos')" class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shadow cursor-pointer text-xs font-bold" title="Trigger SOS">
+            🆘
+          </div>
+          <div onclick="navigateTo('updates')" class="w-9 h-9 rounded-full bg-black/85 text-white flex items-center justify-center shadow cursor-pointer text-xs" title="Official Updates">
+            📢
+          </div>
+        </div>
+
+        <div class="relative z-10 my-4">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-red-600">AHMEDABAD COVERAGE ZONE</span>
+          <h2 class="text-2xl font-black text-gray-900 leading-tight mt-1">
+            24/7 Rapid Ambulance Response
+          </h2>
+          <p class="text-xs text-gray-600 mt-2">
+            Average response time under 5 minutes in Navrangpura, Ashram Road, and Paldi corridors.
+          </p>
+        </div>
+
+        <!-- Bottom Action Plate inside card -->
+        <div class="relative z-10 pt-2">
+          <button onclick="navigateTo('sos')" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-red-500/30 flex items-center justify-center space-x-2">
+            <span>TAP FOR EMERGENCY SOS</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. CITIZEN SOS SCREEN (Strict 03_citizen_sos reproduction) ── -->
+    <div id="screen-sos" class="screen-view hidden flex-1 flex flex-col justify-between p-6 bg-[#090d16] text-white">
+      <!-- Ambient Radials -->
+      <div class="relative z-10 flex items-center justify-between">
+        <div class="relative w-12 h-12 flex items-center justify-center opacity-30">
+          <div class="absolute w-10 h-10 rounded-full border border-sky-400/40"></div>
+          <div class="absolute w-6 h-6 rounded-full border border-sky-300/30"></div>
+        </div>
+        <h1 class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Emergency</h1>
+        <button onclick="triggerCrashSimulation()" class="w-10 h-10 rounded-full green-floating-btn flex items-center justify-center text-slate-900 font-bold text-xl active:scale-95 transition-all">
+          +
+        </button>
+      </div>
+
+      <!-- Central SOS Plate (Exact from 03_citizen_sos) -->
+      <div class="relative z-10 flex items-center justify-center my-auto">
+        <div class="w-[240px] h-[240px] rounded-[52px] plate-bezel p-[18px] flex items-center justify-center">
+          <div class="w-full h-full rounded-[38px] plate-inner p-2.5 flex flex-col justify-between">
+            <button onclick="call112()" class="w-full h-[88px] rounded-[28px] btn-top-white flex flex-col items-center justify-center active:scale-[0.98] transition-transform">
+              <span class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">112</span>
+              <span class="text-[9px] font-bold text-slate-500 mt-1 uppercase">Govt Hotline</span>
+            </button>
+            <button id="sos-trigger-btn" onmousedown="startSosHold()" onmouseup="cancelSosHold()" ontouchstart="startSosHold()" ontouchend="cancelSosHold()" class="w-full h-[88px] rounded-[28px] btn-bottom-sos flex flex-col items-center justify-center active:scale-[0.98] transition-transform">
+              <span class="text-2xl font-black text-white tracking-wider leading-none">SOS</span>
+              <span id="sos-btn-subtext" class="text-[8px] font-bold text-white/80 mt-1 uppercase">Hold 1.5s to Dispatch</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Utilities Menu Area (From 03_citizen_sos) -->
+      <div class="relative z-10 space-y-2.5">
+        <div class="flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#131b2a]/90 border border-slate-800/80">
+          <div class="flex items-center space-x-3">
+            <span class="text-sm">📱</span>
+            <div>
+              <div class="text-xs font-medium text-slate-200">Crash Sensor Monitor</div>
+              <div class="text-[9px] text-emerald-400">Accelerometer Impact Active</div>
+            </div>
+          </div>
+          <span class="text-slate-500 text-xs">➔</span>
+        </div>
+        <div onclick="navigateTo('updates')" class="flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[#131b2a]/90 border border-slate-800/80 cursor-pointer">
+          <div class="flex items-center space-x-3">
+            <span class="text-sm">📢</span>
+            <div>
+              <div class="text-xs font-medium text-slate-200">Government Updates</div>
+              <div class="text-[9px] text-slate-400">Monsoon & Road Safety Advisories</div>
+            </div>
+          </div>
+          <span class="text-slate-500 text-xs">➔</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. CITIZEN TRACKING SCREEN (Strict 02_citizen_tracking) ── -->
+    <div id="screen-tracking" class="screen-view hidden flex-1 flex flex-col justify-between bg-white text-slate-900">
+      <!-- Header -->
+      <div class="px-5 pt-3 pb-2 flex items-center justify-between bg-white/95 border-b border-slate-100 z-10">
+        <button onclick="navigateTo('home')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700">
+          ❮
+        </button>
+        <div class="text-center">
+          <h2 class="text-xs font-bold text-slate-800">Approaching Ambulance</h2>
+          <p class="text-[9px] text-emerald-600 font-semibold">● Live Telemetry</p>
+        </div>
+        <div class="w-8"></div>
+      </div>
+
+      <!-- Map View with Ahmedabad Canvas -->
+      <div class="relative flex-1 map-background overflow-hidden flex items-center justify-center">
+        <!-- SVG Road Network -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400" preserveAspectRatio="none">
+          <path d="M 0 100 Q 200 120 400 80" stroke="#ffffff" stroke-width="8" fill="none" />
+          <path d="M 120 0 L 140 400" stroke="#ffffff" stroke-width="12" fill="none" />
+          <path d="M 280 0 L 260 400" stroke="#ffffff" stroke-width="10" fill="none" />
+          <path d="M 0 250 C 150 240, 250 260, 400 230" stroke="#ffffff" stroke-width="14" fill="none" />
+
+          <!-- Dynamic Route Line from Ambulance to Patient -->
+          <path id="route-path" d="M 140 90 L 140 180 Q 140 250 250 250" stroke="#ea3836" stroke-width="4" stroke-dasharray="6,4" fill="none" />
+        </svg>
+
+        <!-- Ahmedabad Road Name Labels -->
+        <div class="absolute top-12 left-6 text-[9px] font-bold text-slate-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
+          NAVRANGPURA
+        </div>
+        <div class="absolute top-20 right-8 text-[9px] font-bold text-slate-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
+          ASHRAM ROAD
+        </div>
+        <div class="absolute bottom-28 left-8 text-[9px] font-bold text-slate-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
+          PALDI CROSS
+        </div>
+
+        <!-- Patient Marker with Pulse Rings -->
+        <div class="absolute top-[230px] left-[230px] flex items-center justify-center">
+          <div class="absolute w-12 h-12 rounded-full bg-red-500/20 pulse-effect"></div>
+          <div class="w-6 h-6 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-[10px]">
+            📍
+          </div>
+        </div>
+
+        <!-- Moving Ambulance Marker -->
+        <div id="ambulance-marker" class="absolute top-[75px] left-[125px] flex items-center justify-center transition-all duration-1000">
+          <div class="w-9 h-9 rounded-2xl bg-[#090d16] border-2 border-white shadow-xl flex items-center justify-center text-base">
+            🚑
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Sheet Dashboard (Strict 02_citizen_tracking card) -->
+      <div class="p-5 bg-white border-t border-slate-200/80 shadow-2xl rounded-t-3xl z-10">
+        <div class="flex items-center justify-between pb-3">
+          <span class="text-xs font-semibold text-slate-500">Arriving in</span>
+          <span id="tracking-eta" class="text-sm font-extrabold text-[#ea3836]">4 min</span>
+        </div>
+
+        <!-- Progress Line with Moving Ambulance -->
+        <div class="relative w-full h-1.5 bg-slate-100 rounded-full my-2 overflow-hidden">
+          <div id="tracking-progress-bar" class="h-full bg-[#ea3836] rounded-full transition-all duration-1000" style="width: 65%;"></div>
+        </div>
+
+        <!-- Driver Profile & Actions -->
+        <div class="flex items-center justify-between pt-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-full bg-slate-900 border border-slate-200 flex items-center justify-center text-white text-sm font-bold">
+              RP
+            </div>
+            <div>
+              <h3 id="tracking-driver-name" class="text-xs font-bold text-slate-900">Ramesh Patel</h3>
+              <p id="tracking-vehicle-no" class="text-[10px] text-slate-500">GJ-01-AX-4020 • ALS Unit</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="call112()" class="w-10 h-10 rounded-full bg-[#ea3836] hover:bg-red-700 text-white flex items-center justify-center shadow-md active:scale-95 transition-all text-sm">
+              📞
+            </button>
+            <button onclick="alert('Message sent to paramedic')" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center shadow-sm active:scale-95 transition-all text-sm">
+              💬
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. CITIZEN UPDATES / NEWS (Repurposed from 04_driver_dispatch) ── -->
+    <div id="screen-updates" class="screen-view hidden flex-1 flex flex-col justify-between p-4 bg-[#080d15] text-white overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pt-1 pb-3 px-1 border-b border-slate-800">
+        <button onclick="navigateTo('home')" class="text-xs text-slate-400 font-semibold flex items-center space-x-1">
+          <span>❮</span><span>Back</span>
+        </button>
+        <h2 class="text-xs font-bold tracking-tight text-white uppercase">Official Advisories</h2>
+        <div class="w-8"></div>
+      </div>
+
+      <!-- Feed Container -->
+      <div id="news-feed-container" class="space-y-4 my-3 flex-1 overflow-y-auto no-scrollbar">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+
+    <!-- ── 5. CITIZEN PROFILE ── -->
+    <div id="screen-profile" class="screen-view hidden flex-1 flex flex-col justify-between p-6 bg-[#08080a] text-white overflow-y-auto no-scrollbar">
+      <div>
+        <h2 class="text-lg font-bold text-white mb-4">Medical & Safety Profile</h2>
+        <div class="bg-[#131b2a] border border-slate-800 rounded-2xl p-4 space-y-3 text-xs">
+          <div>
+            <span class="text-slate-400 block">Full Name</span>
+            <span class="text-white font-semibold">Aarav Patel</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">Blood Group</span>
+            <span class="text-red-400 font-bold">B+ Positive</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">Allergies & Critical Conditions</span>
+            <span class="text-amber-300">Type-1 Diabetic. Penicillin allergy.</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">Emergency Contacts</span>
+            <span class="text-slate-200">Dr. Priya Patel (+91 98765 43211)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 30-Second Crash Countdown Modal ── -->
+  <div id="crash-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
+    <div class="w-20 h-20 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center mb-6 animate-ping">
+      <span class="text-3xl">⚠️</span>
+    </div>
+    <span class="text-xs font-bold uppercase tracking-widest text-red-500">SEVERE IMPACT DETECTED</span>
+    <h2 class="text-2xl font-black text-white mt-1">Calling Emergency SOS In</h2>
+    <div id="crash-countdown-timer" class="text-7xl font-black text-red-500 my-4 font-mono">30</div>
+    <p class="text-xs text-slate-400 max-w-xs mb-8">
+      If you are uninjured, press cancel immediately to dismiss dispatch activation.
+    </p>
+    <button onclick="cancelCrashCountdown()" class="w-full max-w-xs py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-2xl border border-slate-700 transition-all">
+      CANCEL (I AM SAFE)
+    </button>
+  </div>
+
+  <!-- ── In-App Bottom Navigation Dock (Restrained SaHaay Rail) ── -->
+  <footer class="bg-[#0b0e14]/95 border-t border-slate-800/80 px-6 py-2 flex items-center justify-around z-30">
+    <button onclick="navigateTo('home')" class="nav-btn flex flex-col items-center text-white" data-target="home">
+      <span class="text-base">🏠</span>
+      <span class="text-[9px] font-semibold mt-0.5">Home</span>
+    </button>
+    <button onclick="navigateTo('sos')" class="nav-btn flex flex-col items-center text-slate-500" data-target="sos">
+      <span class="text-base">🆘</span>
+      <span class="text-[9px] font-semibold mt-0.5">SOS</span>
+    </button>
+    <button onclick="navigateTo('tracking')" class="nav-btn flex flex-col items-center text-slate-500" data-target="tracking">
+      <span class="text-base">📍</span>
+      <span class="text-[9px] font-semibold mt-0.5">Track</span>
+    </button>
+    <button onclick="navigateTo('updates')" class="nav-btn flex flex-col items-center text-slate-500" data-target="updates">
+      <span class="text-base">📢</span>
+      <span class="text-[9px] font-semibold mt-0.5">Updates</span>
+    </button>
+    <button onclick="navigateTo('profile')" class="nav-btn flex flex-col items-center text-slate-500" data-target="profile">
+      <span class="text-base">👤</span>
+      <span class="text-[9px] font-semibold mt-0.5">Profile</span>
+    </button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

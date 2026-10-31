@@ -5,14 +5,14 @@
 [![License](https://img.shields.io/badge/License-FSL--1.1--ALv2-blue?style=for-the-badge)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/Platform-NationScale-orange?style=for-the-badge)
 ![Mode](https://img.shields.io/badge/Mode-Online%20%2B%20Offline%20(SMS)-red?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-58%20Passing-brightgreen?style=for-the-badge)
-![Bench](https://img.shields.io/badge/Matching-0.003ms-purple?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-59%20Passing-brightgreen?style=for-the-badge)
+![Bench](https://img.shields.io/badge/Matching-0.025ms-purple?style=for-the-badge)
 
 > **"No patient left waiting."**
 >
-> SaHaay transforms emergency response from a manual, opaque phone-system into a **real-time, data-driven, and fully autonomous rescue capability**.
+> SaHaay transforms emergency response from an opaque manual coordination process into a **real-time, data-driven, offline-first ecosystem** comprising two standalone native Android APKs, a central web admin portal, and an authoritative low-latency dispatch engine.
 >
-> 📖 **Judges & Evaluators:** See [walkthrough.md](walkthrough.md) for the complete 8-stage interactive demonstration guide and scriptable scenario controls.
+> 📖 **Judges & Evaluators:** See [docs/PROTOTYPE_GUIDE.md](docs/PROTOTYPE_GUIDE.md) for the complete end-to-end user journey demonstration script and system architecture.
 
 ---
 
@@ -22,7 +22,7 @@ In the Golden Hour, certainty saves lives. Yet, India's current emergency infras
 
 | Current System (108/112) ❌ | SaHaay Autonomous Grid ✅ |
 | :--- | :--- |
-| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 = 3.3\ \mu\text{s}$ search latency) |
+| **Manual Dispatch** via Call Centers | **Instant Proximity Dispatch** ($p99 = 0.025\text{ ms}$ search latency) |
 | **Blind Waiting** (No Tracking) | **Live Tracking with Dead-Reckoning** |
 | **Single Point of Failure** | **Self-Healing Failover** (Auto-Redispatch to Patient Live GPS) |
 | **Network Dependent** | **Offline SMS-First Mechanism** ($\le 45$ char Base36 packets) |
@@ -30,84 +30,62 @@ In the Golden Hour, certainty saves lives. Yet, India's current emergency infras
 
 ---
 
-## 🏗️ Autonomous Architecture
+## 🏗️ Autonomous Ecosystem Architecture
 
-SaHaay replaces human guesswork with intelligent orchestration. The system autonomously manages the entire lifecycle of an emergency—from detection to hospital admission.
+SaHaay operates as a unified emergency response ecosystem:
+
+1. **SaHaay Citizen Android App (`org.sahaay.citizen`)**: Tactile hold-to-confirm SOS, automatic 30s crash countdown, approaching ambulance live telemetry, and official government safety alerts.
+2. **SaHaay Ambulance Driver Android App (`org.sahaay.driver`)**: State paramedic verification gate, on-duty radar dome, atomic mission acceptance, turn-by-turn navigation stages, and breakdown reporting.
+3. **SaHaay Central Admin Portal (`apps/admin-web/`)**: Public verified APK download center, real-time fleet overview, driver license verification queue, emergency dispatch monitor, and official advisories CMS.
+4. **Authoritative Dispatch Server (`server/`)**: Sub-millisecond spatial cell hashing, synchronous first-accept lock, WebSocket broadcast, file-backed persistence, and tamper-evident SHA-256 audit ledger.
 
 ```mermaid
-graph TD
-    %% Nodes
-    User([User / IoT Crash Sensor])
-    SOS_Btn{Accident Detected?}
-    
-    subgraph "Decision Core (The Brain)"
-        Locate[Locate GPS / Locality Hint]
-        Scan500[Search Ring 1: 500m]
-        Scan1km[Search Ring 2: 1km]
-        Scan2km[Search Ring 3: 2km - 8km]
-        Dispatch[Dispatch Offers to Candidate Drivers]
+flowchart TD
+    subgraph Citizens ["Citizen Mobile Experience"]
+        CA["SaHaay Citizen App<br/>(org.sahaay.citizen)"]
+        CSOS["Web SOS Interface<br/>(:3000/sos)"]
     end
 
-    subgraph "Driver Network"
-        DriverMobile[Driver Interfaces]
-        Accept{Driver Confirms?}
-        Lock[🔒 Synchronous First-Accept Lock]
-        Reject[Decline / Auto-Timeout]
+    subgraph Drivers ["Ambulance Paramedic Experience"]
+        DA["SaHaay Driver App<br/>(org.sahaay.driver)"]
     end
 
-    subgraph "Live Operations"
-        Routing[⚡ Route Calculation & Dead-Reckoning]
-        Track[📡 Telemetry & Socket Stream]
-        Traffic[🚦 Green Corridor Advisory Notifications]
-        Breakdown{Breakdown Reported?}
+    subgraph Core ["SaHaay Central Dispatch (:3000)"]
+        MATCH["Spatial Grid Index<br/>(p99 < 0.03ms)"]
+        LOCK["Atomic First-Accept Lock<br/>(HTTP 200 vs 409)"]
+        AUDIT["SHA-256 Hash Chain Ledger"]
+        STORE["Persistent Storage<br/>(sahaay-store.json)"]
     end
 
-    subgraph "Self-Healing Failover"
-        Transfer[🔄 Re-dispatch to Patient Live GPS]
+    subgraph Ops ["Emergency Operations Center"]
+        ADMIN["Admin Web Portal (:5174)<br/>Fleet & Verification CMS"]
+        CTRL["Control Dashboard (:3000/control)"]
     end
 
-    Hospital([🏥 Hospital Admission])
-
-    %% Flows
-    User --> SOS_Btn
-    SOS_Btn -- Yes --> Locate
-    Locate --> Scan500
-    Scan500 -- Found --> Dispatch
-    Scan500 -- None --> Scan1km
-    Scan1km -- Found --> Dispatch
-    Scan1km -- None --> Scan2km
-    Scan2km --> Dispatch
-    
-    Dispatch --> DriverMobile
-    DriverMobile --> Accept
-    
-    Accept -- No --> Reject
-    Reject --> Scan1km
-    
-    Accept -- Yes --> Lock
-    Lock --> Routing
-    Routing --> Track
-    Track --> Traffic
-    
-    Track --> Breakdown
-    Breakdown -- Yes --> Transfer
-    Transfer --> Scan500
-    
-    Breakdown -- No --> Hospital
+    CA -->|"POST /missions (SOS)"| MATCH
+    CSOS -->|"POST /missions (SOS)"| MATCH
+    MATCH --> LOCK
+    LOCK -->|"Dispatch Offer"| DA
+    DA -->|"POST /missions/:id/accept"| LOCK
+    LOCK -->|"Telemetry Tracking"| CA
+    DA -->|"PATCH /missions/:id/status"| STORE
+    STORE --> ADMIN
+    MATCH --> AUDIT
+    LOCK --> AUDIT
 ```
 
 ---
 
 ## 🔥 Key Capabilities
 
-### 1. ⚡ High-Performance Dispatch Engine ($< 0.01\text{ ms}$ search latency)
+### 1. ⚡ High-Performance Dispatch Engine ($< 0.03\text{ ms}$ search latency)
 - **In-Memory Spatial Grid Index**: Uses fixed $0.01^\circ$ (~1.11 km) spatial cell hashing to index thousands of ambulances.
 - **Empirically Measured Benchmark**: Measured with `npm run bench` (1,000 iterations per radius):
-  - **1,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ at $500\text{ m}$.
-  - **10,000 ambulances**: $p50 = 2.1\ \mu\text{s}$, $p99 = 3.3\ \mu\text{s}$ ($0.0033\text{ ms}$) at $500\text{ m}$.
+  - **1,000 ambulances**: $p50 = 6.2\ \mu\text{s}$, $p99 = 0.049\text{ ms}$ at $1.0\text{ km}$.
+  - **10,000 ambulances**: $p50 = 9.0\ \mu\text{s}$, $p99 = 0.025\text{ ms}$ at $500\text{ m}$.
   - *Full benchmark report: [docs/BENCHMARK.md](docs/BENCHMARK.md)*.
 - **Synchronous First-Accept Lock**: Atomically locks assignment on the first driver acceptance (HTTP 200); any competing or late acceptances receive **HTTP 409 Conflict** and are cancelled.
-- **Simulated Driver Auto-Acceptance & Fast Ring Expansion**: When testing without physical driver devices, candidates automatically accept within 1.5s in demo mode. Instant ring expansion (`POST /missions/:id/expand`) and emergency quick-assignment (`POST /missions/:id/quick-assign`) allow immediate triage during demonstrations.
+- **Simulated Driver Auto-Acceptance & Fast Ring Expansion**: When testing without physical driver devices, candidate ambulances automatically accept within 1.5s in demo mode. Instant ring expansion (`POST /missions/:id/expand`) and emergency quick-assignment (`POST /missions/:id/quick-assign`) allow immediate triage during demonstrations.
 
 ### 2. 🛡️ Self-Healing Failover (Breakdown Protection)
 - When a breakdown is reported for an active ambulance:
@@ -135,30 +113,26 @@ graph TD
 - Real-time verification via `GET /audit/verify`.
 - Includes a live tamper demonstration API (`POST /audit/tamper`) to prove mathematical integrity to judges.
 
-### 6. 🚦 Green Corridor Coordination (Advisory)
-- Broadcasts structured advisory pre-clearance notifications about approaching emergency vehicles at major junctions.
-- Displayed on the live authority dashboard served at `http://localhost:3000/control`.
-- Explicitly labelled: *Advisory notification (simulated pre-clearance; no physical signal actuation)*.
-
 ---
 
 ## 🛠️ Technology Stack
 
 | Layer | Component | Technology |
 | :--- | :--- | :--- |
-| **Server** | Dispatch Engine & WebSocket | **Node.js, Express, ws, TypeScript** (Zero external dependencies) |
+| **Server** | Dispatch Engine & WebSocket | **Node.js, Express, ws, TypeScript** |
+| **Persistence** | File-backed State Store | **JSON Store (`server/data/sahaay-store.json`)** |
 | **Core Logic** | Codec, State Machine, Sensors | **Pure TypeScript** (Single source of truth in `src/core/config.ts`) |
 | **Spatial Index** | Proximity Matching | **Spatial Cell Hashing Grid + Haversine** |
 | **Audit Trail** | Tamper-Evident Ledger | **SHA-256 Cryptographic Hash Chain** |
-| **Control Dashboard** | Authority & Fleet Monitor | **Real-Time HTML5 + WebSocket** (`:3000/control`) |
-| **Client / Mobile** | Citizen & Driver Apps | **Expo (React Native) + react-native-web** |
-| **Legacy Subsystems** | Full-Stack Reference | **backend/** (MongoDB + Socket.io) & **frontend/** (Vite + React) |
+| **Citizen App** | Standalone Native APK | **Android (Java 8 / SDK 34) + Offline Web App (`org.sahaay.citizen`)** |
+| **Driver App** | Standalone Native APK | **Android (Java 8 / SDK 34) + Offline Web App (`org.sahaay.driver`)** |
+| **Admin Web** | Central Operations Portal | **React, Vite, Tailwind CSS (`apps/admin-web/`)** |
 
 ---
 
 ## 🚀 Quick Start (Zero-Config Runner)
 
-No cloud accounts, no API keys, and no MongoDB installation required.
+No cloud accounts, no API keys, and no external database required.
 
 ### 1. Install Dependencies
 ```bash
@@ -172,17 +146,31 @@ npm install
 npm run dev:server
 ```
 - **Control Dashboard:** [http://localhost:3000/control](http://localhost:3000/control)
-- **Citizen SOS Testing Portal:** [http://localhost:3000/sos](http://localhost:3000/sos)
+- **Citizen SOS Web Interface:** [http://localhost:3000/sos](http://localhost:3000/sos)
 - **Health Endpoint:** [http://localhost:3000/health](http://localhost:3000/health)
-- **Fleet List:** [http://localhost:3000/ambulances](http://localhost:3000/ambulances)
 
-### 3. Run Quality, Build & Verification Commands
+### 3. Start the Admin Web Portal
+```bash
+cd apps/admin-web
+npm run dev
+```
+- Accessible at [http://localhost:5174](http://localhost:5174)
+- Admin Login: `admin@sahaay.gov.in` / `SaHaayAdmin2026!`
+
+### 4. Build Standalone Android APKs
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1
+```
+Output signed release APKs:
+- `artifacts/apk/SaHaay-Citizen.apk`
+- `artifacts/apk/SaHaay-Driver.apk`
+
+### 5. Run Quality, Build & Verification Commands
 ```bash
 npm run typecheck    # Verifies TypeScript compiler across core and server (0 errors)
-npm run build:server # Builds production server to dist/ and copies static assets
-npm test             # Runs test suite locally (58 tests across 7 suites)
-npm run test:ci      # Deterministic CI runner (--runInBand; fails if 0 tests discovered)
-npm run test:smoke   # Cross-platform runtime smoke test (polls /health and /control on isolated port)
+npm run build:server # Builds production server to dist/
+npm test             # Runs test suite locally (59 tests across 7 suites)
+npm run test:smoke   # Cross-platform runtime smoke test
 npm run bench        # Spatial grid benchmark (<200ms assertion on 10k fleet)
 ```
 
@@ -195,15 +183,15 @@ npm run bench        # Spatial grid benchmark (<200ms assertion on 10k fleet)
 - [x] **In-Memory Spatial Index Matching (`server/src/matching.ts`)**
 - [x] **Synchronous First-Accept Lock with HTTP 409 Conflict (`server/src/dispatch.ts`)**
 - [x] **Dynamic Ripple Search Ladder (500m $\to$ 8km)**
-- [x] **Empirical Benchmark Suite (`docs/BENCHMARK.md`: $0.003\text{ ms}$ search latency)**
+- [x] **Empirical Benchmark Suite (`docs/BENCHMARK.md`: $0.025\text{ ms}$ search latency)**
 - [x] **Vehicular Crash Detector with Stillness Filter (`src/core/crash/CrashDetector.ts`)**
 - [x] **30-Second Countdown Timer with Cancel & Exactly-Once SOS (`src/core/crash/CountdownTimer.ts`)**
 - [x] **Deterministic Transport State Machine (`src/core/transport/TransportManager.ts`)**
 - [x] **Cryptographic Tamper-Evident Audit Chain (`server/src/audit.ts`)**
 - [x] **Self-Healing Failover to Live Patient GPS with Breakdown Coordinates Preserved**
-- [x] **Traffic Authority Control Dashboard (`http://localhost:3000/control`)**
-- [x] **Demo Director Dynamic Time Scaling with Active Timer Rescheduling**
-- [x] **58 / 58 Automated Tests Passing across 7 Test Suites**
+- [x] **Two Separate Standalone Signed Android APKs (`SaHaay-Citizen.apk`, `SaHaay-Driver.apk`)**
+- [x] **Central Public Portal & Authenticated Control Room (`apps/admin-web/`)**
+- [x] **59 / 59 Automated Tests Passing across 7 Test Suites**
 - [x] **Zero TypeScript Errors (`npx tsc --noEmit`)**
 
 ---
