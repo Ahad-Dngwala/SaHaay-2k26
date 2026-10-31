@@ -1,19 +1,41 @@
 /**
  * server/src/ws.ts
- * WebSocket hub: manages connected clients, routes messages.
+ * WebSocket hub: manages connected clients, routes messages with authenticated handshakes.
  */
 
 import { WebSocket, WebSocketServer } from 'ws';
 import type { WsClientMeta } from './types';
+import { verifySession } from './auth';
 
 const clients = new Map<WebSocket, WsClientMeta>();
 
 export function initWss(wss: WebSocketServer): void {
   wss.on('connection', (ws, req) => {
-    const url = new URL(req.url ?? '/', `http://localhost`);
-    const role = (url.searchParams.get('role') ?? 'control') as WsClientMeta['role'];
-    const missionId   = url.searchParams.get('missionId')   ?? undefined;
-    const ambulanceId = url.searchParams.get('ambulanceId') ?? undefined;
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    const token = url.searchParams.get('token');
+    const missionId = url.searchParams.get('missionId') ?? undefined;
+
+    let role: WsClientMeta['role'] = (url.searchParams.get('role') as WsClientMeta['role']) ?? 'control';
+    let ambulanceId = url.searchParams.get('ambulanceId') ?? undefined;
+
+    // Authenticate if token provided, deriving verified identity
+    if (token) {
+      const session = verifySession(token);
+      if (session) {
+        if (session.role === 'driver') {
+          role = 'driver';
+          ambulanceId = session.userId;
+        } else if (session.role === 'citizen') {
+          role = 'citizen';
+        } else if (session.role === 'admin') {
+          role = 'control';
+        }
+      } else {
+        // Invalid token provided -> reject connection
+        ws.close(4401, 'Unauthorized token');
+        return;
+      }
+    }
 
     clients.set(ws, { role, missionId, ambulanceId });
     console.log(`WS connected: role=${role} mission=${missionId} ambu=${ambulanceId}`);
@@ -49,5 +71,3 @@ export function sendToAmbulance(ambulanceId: string, msg: unknown): void {
     if (meta.ambulanceId === ambulanceId) send(ws, msg);
   }
 }
-
-export function getClientCount(): number { return clients.size; }

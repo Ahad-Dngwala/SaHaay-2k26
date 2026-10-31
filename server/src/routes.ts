@@ -67,6 +67,21 @@ function decodeSmsToken(raw: string): { ok: true; uid: string; lat: number; lon:
 // Idempotency store: sosUid → missionId
 const seenSosUids = new Set<string>();
 
+function verifyAdmin(req: Request, res: Response, next: () => void): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Admin authorization header required' });
+    return;
+  }
+  const token = authHeader.slice(7);
+  const session = verifySession(token);
+  if (!session || session.role !== 'admin') {
+    res.status(403).json({ error: 'Admin privileges required' });
+    return;
+  }
+  next();
+}
+
 export function createRouter(): Router {
   const router = Router();
 
@@ -462,7 +477,11 @@ export function createRouter(): Router {
     res.json(verifyChain(state.audit));
   });
 
-  router.post('/audit/tamper', (req: Request, res: Response) => {
+  router.post('/audit/tamper', verifyAdmin, (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(403).json({ error: 'Tamper testing endpoint disabled in production' });
+      return;
+    }
     const { index } = req.body as { index: number };
     const entry = tamperEntry(index ?? 0);
     if (!entry) { res.status(404).json({ error: 'entry not found' }); return; }
@@ -470,7 +489,11 @@ export function createRouter(): Router {
   });
 
   // ── Demo Director ───────────────────────────────────────────────────────────
-  router.post('/demo/reset', (_req: Request, res: Response) => {
+  router.post('/demo/reset', (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(403).json({ error: 'Demo reset disabled in production' });
+      return;
+    }
     resetState();
     seedAmbulances();
     syncGrid(state.ambulances);
@@ -479,6 +502,10 @@ export function createRouter(): Router {
   });
 
   router.post('/demo/time-scale', (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(403).json({ error: 'Demo time-scale disabled in production' });
+      return;
+    }
     const { scale } = req.body as { scale: number };
     if (typeof scale !== 'number' || scale < 1) { res.status(400).json({ error: 'scale must be >= 1' }); return; }
     setDemoTimeScale(scale);
