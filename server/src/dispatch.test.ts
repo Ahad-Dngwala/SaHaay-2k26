@@ -103,8 +103,8 @@ describe('Server Dispatch Engine: Correctness & Concurrency', () => {
     expect(updated.breakdownAmbulanceId).toBe(driverId);
     expect(updated.previousAmbulanceIds).toContain(driverId);
 
-    // Failed ambulance is marked BREAKDOWN
-    expect(state.ambulances.get(driverId)?.status).toBe('BREAKDOWN');
+    // Failed ambulance is marked OUT_OF_SERVICE or BREAKDOWN
+    expect(['BREAKDOWN', 'OUT_OF_SERVICE']).toContain(state.ambulances.get(driverId)?.status);
 
     // Audit log contains BREAKDOWN_REPORTED with breakdownLat and breakdownLon
     const breakdownAudit = state.audit.find(a => a.event === 'BREAKDOWN_REPORTED');

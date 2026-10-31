@@ -20,6 +20,28 @@ function scaledMs(seconds: number): number {
 
 function now(): number { return Date.now(); }
 
+const offerTimers = new Map<string, NodeJS.Timeout>();
+
+export function clearOfferTimers(missionId?: string, ambuId?: string): void {
+  if (missionId && ambuId) {
+    const key = `${missionId}:${ambuId}`;
+    const t = offerTimers.get(key);
+    if (t) { clearTimeout(t); offerTimers.delete(key); }
+  } else if (missionId) {
+    for (const [key, t] of Array.from(offerTimers.entries())) {
+      if (key.startsWith(`${missionId}:`)) {
+        clearTimeout(t);
+        offerTimers.delete(key);
+      }
+    }
+  } else {
+    for (const t of offerTimers.values()) {
+      clearTimeout(t);
+    }
+    offerTimers.clear();
+  }
+}
+
 function updateMission(id: string, updates: Partial<Mission>): Mission {
   const m = state.missions.get(id);
   if (!m) throw new Error(`Mission ${id} not found`);
@@ -93,6 +115,8 @@ function _searchRing(missionId: string): void {
     return;
   }
 
+  clearOfferTimers(missionId);
+
   // Send offers to all eligible candidates in this ring (nearest-first)
   const offerIds = eligible.map(c => c.id);
   updateMission(missionId, {
@@ -103,7 +127,7 @@ function _searchRing(missionId: string): void {
 
   auditLog('OFFERS_SENT', { missionId, to: offerIds, radiusM: m.currentRadiusM });
 
-  // Notify each candidate driver via WebSocket
+  // Notify each candidate driver via WebSocket and set TTL
   for (const candidate of eligible) {
     const ambu = state.ambulances.get(candidate.id);
     if (!ambu) continue;
@@ -115,13 +139,23 @@ function _searchRing(missionId: string): void {
       patientLon: m.patientLonLive,
       distanceM: Math.round(candidate.distM),
       addrId: m.addrId,
+      ttlS: Config.OFFER_TTL_S,
     });
+
+    // Schedule per-driver offer TTL timer (25s scaled)
+    const offerKey = `${missionId}:${candidate.id}`;
+    const ttlDelay = scaledMs(Config.OFFER_TTL_S);
+    const ttlTimer = setTimeout(() => {
+      offerTimers.delete(offerKey);
+      handleOfferTimeout(missionId, candidate.id);
+    }, ttlDelay);
+    if (ttlTimer.unref) ttlTimer.unref();
+    offerTimers.set(offerKey, ttlTimer);
   }
 
   // Notify citizen
   broadcastToMission(missionId, { type: 'MISSION_SEARCHING', missionId, radiusM: m.currentRadiusM });
 
-  // Real drivers must explicitly accept via POST /missions/:id/accept
   // Schedule offer timeout → expansion if no one accepts
   _scheduleExpansion(missionId);
 }
@@ -154,11 +188,11 @@ function _scheduleExpansion(missionId: string): void {
   });
 }
 
-
-
 function _tryExpand(missionId: string): void {
   const m = state.missions.get(missionId);
   if (!m || !['SEARCHING', 'DISPATCHING', 'REDISPATCH'].includes(m.status)) return;
+
+  clearOfferTimers(missionId);
 
   // Cancel any outstanding offers
   const pendingOffers = [...m.pendingOffers];
@@ -172,8 +206,17 @@ function _tryExpand(missionId: string): void {
 
   if (nextRadius > Config.MAX_RADIUS_M) {
     updateMission(missionId, { status: 'FAILED' });
-    auditLog('MISSION_FAILED', { missionId, reason: 'exhausted all radii' });
-    broadcastToMission(missionId, { type: 'MISSION_FAILED', missionId });
+    auditLog('MISSION_FAILED', {
+      missionId,
+      reason: 'exhausted all radii',
+      instructions: 'No ambulances available within 8 km. Please dial 108 or 112 immediately.',
+    });
+    broadcastToMission(missionId, {
+      type: 'MISSION_FAILED',
+      missionId,
+      reason: 'No ambulances available within 8 km',
+      emergencyInstructions: 'No ambulances available within reach. Please dial 108 (Ambulance) or 112 (National Emergency) immediately.',
+    });
     return;
   }
 
@@ -209,6 +252,10 @@ export function acceptMission(missionId: string, ambulanceId: string): AcceptRes
   if (!ambu || ambu.status !== 'AVAILABLE') {
     return { won: false, missionId, ambulanceId };
   }
+
+  // Clear offer timers for this mission
+  clearOfferTimers(missionId);
+  stallTrackers.delete(ambulanceId);
 
   // LOCK the mission — this is the first-accept-wins point
   const loserIds = m.pendingOffers.filter(id => id !== ambulanceId);
@@ -257,23 +304,194 @@ export function acceptMission(missionId: string, ambulanceId: string): AcceptRes
   return { won: true, missionId, ambulanceId };
 }
 
-// ── Decline / Timeout ─────────────────────────────────────────────────────────
+// ── Decline & Offer TTL ───────────────────────────────────────────────────────
 
 export function declineMission(missionId: string, ambulanceId: string): void {
   const m = state.missions.get(missionId);
   if (!m || m.status !== 'DISPATCHING') return;
 
+  clearOfferTimers(missionId, ambulanceId);
+
   const remaining = m.pendingOffers.filter(id => id !== ambulanceId);
-  updateMission(missionId, { pendingOffers: remaining });
+  const prev = m.previousAmbulanceIds.includes(ambulanceId)
+    ? m.previousAmbulanceIds
+    : [...m.previousAmbulanceIds, ambulanceId];
+
+  updateMission(missionId, { pendingOffers: remaining, previousAmbulanceIds: prev });
 
   auditLog('OFFER_DECLINED', { missionId, ambulanceId });
 
-  // If no more offers, re-expand immediately
+  // Early expansion if all drivers in current ring declined or timed out
   if (remaining.length === 0) {
     const timerItem = state.expansionTimers.get(missionId);
     if (timerItem) { clearTimeout(timerItem.timer); state.expansionTimers.delete(missionId); }
     _tryExpand(missionId);
   }
+}
+
+export function handleOfferTimeout(missionId: string, ambulanceId: string): void {
+  const m = state.missions.get(missionId);
+  if (!m || m.status !== 'DISPATCHING') return;
+  if (!m.pendingOffers.includes(ambulanceId)) return;
+
+  clearOfferTimers(missionId, ambulanceId);
+
+  const remaining = m.pendingOffers.filter(id => id !== ambulanceId);
+  const prev = m.previousAmbulanceIds.includes(ambulanceId)
+    ? m.previousAmbulanceIds
+    : [...m.previousAmbulanceIds, ambulanceId];
+
+  updateMission(missionId, { pendingOffers: remaining, previousAmbulanceIds: prev });
+
+  auditLog('OFFER_TTL_EXPIRED', {
+    missionId,
+    ambulanceId,
+    note: 'Driver did not respond within TTL (recorded for driver trust score)',
+  });
+
+  sendToAmbulance(ambulanceId, {
+    type: 'OFFER_CANCELLED',
+    ambulanceId,
+    missionId,
+    reason: 'TTL_EXPIRED',
+  });
+
+  // Early expansion if all offers expired/declined
+  if (remaining.length === 0) {
+    const timerItem = state.expansionTimers.get(missionId);
+    if (timerItem) { clearTimeout(timerItem.timer); state.expansionTimers.delete(missionId); }
+    _tryExpand(missionId);
+  }
+}
+
+// ── Driver Cancellation ───────────────────────────────────────────────────────
+
+export function driverCancelMission(
+  missionId: string,
+  ambulanceId: string,
+  reason: string
+): { ok: boolean; error?: string } {
+  if (!reason || !reason.trim()) {
+    return { ok: false, error: 'Reason is required for driver cancellation' };
+  }
+  const m = state.missions.get(missionId);
+  if (!m) return { ok: false, error: 'Mission not found' };
+  if (m.assignedAmbulanceId !== ambulanceId) {
+    return { ok: false, error: 'Ambulance is not assigned to this mission' };
+  }
+
+  clearOfferTimers(missionId);
+  stallTrackers.delete(ambulanceId);
+
+  const ambu = state.ambulances.get(ambulanceId);
+  if (ambu) {
+    state.ambulances.set(ambulanceId, { ...ambu, status: 'AVAILABLE' });
+  }
+
+  auditLog('DRIVER_CANCELLED', {
+    missionId,
+    ambulanceId,
+    reason,
+    note: 'Driver released back to AVAILABLE, excluded from this mission. Redispatching from live patient location.',
+  });
+
+  sendToAmbulance(ambulanceId, {
+    type: 'MISSION_CANCELLED',
+    missionId,
+    reason,
+    message: 'You have cancelled this mission.',
+  });
+
+  broadcastToMission(missionId, {
+    type: 'DRIVER_CANCELLED',
+    missionId,
+    ambulanceId,
+    reason,
+    message: 'Assigned driver cancelled. Finding replacement ambulance...',
+  });
+
+  // Cancel any active expansion timer
+  const timerItem = state.expansionTimers.get(missionId);
+  if (timerItem) {
+    clearTimeout(timerItem.timer);
+    state.expansionTimers.delete(missionId);
+  }
+
+  updateMission(missionId, {
+    status: 'REDISPATCH',
+    previousAmbulanceIds: [...m.previousAmbulanceIds, ambulanceId],
+    assignedAmbulanceId: undefined,
+    pendingOffers: [],
+    currentRadiusM: Config.SEARCH_RADIUS_M,
+    searchStartedAt: now(),
+  });
+
+  _searchRing(missionId);
+  return { ok: true };
+}
+
+// ── Patient Cancellation ("I'm Safe") ─────────────────────────────────────────
+
+export function cancelMissionByPatient(
+  missionId: string,
+  reason = "Patient marked safe"
+): { ok: boolean; error?: string } {
+  const m = state.missions.get(missionId);
+  if (!m) return { ok: false, error: 'Mission not found' };
+
+  const cancelableStates: MissionStatus[] = ['SEARCHING', 'DISPATCHING', 'ASSIGNED', 'REDISPATCH'];
+  if (!cancelableStates.includes(m.status)) {
+    return { ok: false, error: `Cannot cancel mission in status ${m.status}` };
+  }
+
+  clearOfferTimers(missionId);
+
+  const timerItem = state.expansionTimers.get(missionId);
+  if (timerItem) {
+    clearTimeout(timerItem.timer);
+    state.expansionTimers.delete(missionId);
+  }
+
+  // Cancel any pending offers to candidates
+  for (const aid of m.pendingOffers) {
+    sendToAmbulance(aid, {
+      type: 'OFFER_CANCELLED',
+      ambulanceId: aid,
+      missionId,
+      reason: 'Patient cancelled',
+    });
+  }
+
+  // Release assigned ambulance if any
+  if (m.assignedAmbulanceId) {
+    stallTrackers.delete(m.assignedAmbulanceId);
+    const ambu = state.ambulances.get(m.assignedAmbulanceId);
+    if (ambu) {
+      state.ambulances.set(m.assignedAmbulanceId, { ...ambu, status: 'AVAILABLE' });
+    }
+    sendToAmbulance(m.assignedAmbulanceId, {
+      type: 'MISSION_CANCELLED',
+      missionId,
+      status: 'CANCELLED_BY_PATIENT',
+      reason,
+      message: 'Mission was cancelled by patient.',
+    });
+  }
+
+  updateMission(missionId, {
+    status: 'CANCELLED_BY_PATIENT',
+    pendingOffers: [],
+  });
+
+  auditLog('MISSION_CANCELLED_BY_PATIENT', { missionId, reason });
+  broadcastToMission(missionId, {
+    type: 'MISSION_CANCELLED',
+    missionId,
+    status: 'CANCELLED_BY_PATIENT',
+    reason,
+  });
+
+  return { ok: true };
 }
 
 // ── Breakdown & Re-Dispatch ───────────────────────────────────────────────────
@@ -282,19 +500,31 @@ export function reportBreakdown(missionId: string, ambulanceId: string): void {
   const m = state.missions.get(missionId);
   if (!m || m.assignedAmbulanceId !== ambulanceId) return;
 
+  clearOfferTimers(missionId);
+  stallTrackers.delete(ambulanceId);
+
   const ambu = state.ambulances.get(ambulanceId);
   const breakdownLat = ambu?.lat ?? m.patientLatLive;
   const breakdownLon = ambu?.lon ?? m.patientLonLive;
 
-  // Mark stranded ambulance
-  if (ambu) state.ambulances.set(ambulanceId, { ...ambu, status: 'BREAKDOWN' });
+  // Mark stranded ambulance OUT_OF_SERVICE until an admin clears it
+  if (ambu) state.ambulances.set(ambulanceId, { ...ambu, status: 'OUT_OF_SERVICE' });
 
   auditLog('BREAKDOWN_REPORTED', {
     missionId,
     ambulanceId,
     breakdownLat,
     breakdownLon,
-    note: 'Replacement will be sent to PATIENT live location; breakdown site logged for crew recovery',
+    note: 'Ambulance marked OUT_OF_SERVICE. Replacement will be sent to PATIENT live location; breakdown site logged for crew recovery',
+  });
+
+  sendToAmbulance(ambulanceId, {
+    type: 'AMBULANCE_OUT_OF_SERVICE',
+    ambulanceId,
+    missionId,
+    breakdownLat,
+    breakdownLon,
+    message: 'Vehicle marked out of service. Breakdown coordinates logged for recovery.',
   });
 
   updateMission(missionId, {
@@ -307,7 +537,6 @@ export function reportBreakdown(missionId: string, ambulanceId: string): void {
     pendingOffers: [],
     currentRadiusM: Config.SEARCH_RADIUS_M, // reset radius
     searchStartedAt: now(),
-    // NOTE: search uses patientLatLive (live patient position), not breakdown location
   });
 
   broadcastToMission(missionId, {
@@ -320,6 +549,186 @@ export function reportBreakdown(missionId: string, ambulanceId: string): void {
 
   // Immediately start new search from patient's live position
   _searchRing(missionId);
+}
+
+// ── Telemetry Stall Detection ─────────────────────────────────────────────────
+
+export interface StallTracker {
+  ambulanceId: string;
+  missionId: string;
+  stallStartedAt: number;
+  promptSentAt?: number;
+}
+
+export const stallTrackers = new Map<string, StallTracker>();
+
+export function recordTelemetry(
+  ambulanceId: string,
+  lat: number,
+  lon: number,
+  speedKmh: number,
+  simulatedNowMs?: number
+): void {
+  const ambu = state.ambulances.get(ambulanceId);
+  if (ambu) {
+    state.ambulances.set(ambulanceId, {
+      ...ambu,
+      lat,
+      lon,
+      speedKmh,
+    });
+  }
+
+  // Find if ambulance is assigned to an active mission
+  const activeMission = Array.from(state.missions.values()).find(
+    m => m.assignedAmbulanceId === ambulanceId && ['ASSIGNED', 'ENROUTE', 'ON_SCENE'].includes(m.status)
+  );
+
+  if (!activeMission) {
+    stallTrackers.delete(ambulanceId);
+    return;
+  }
+
+  const distToPatient = haversineSimple(lat, lon, activeMission.patientLatLive, activeMission.patientLonLive);
+  const isStalled = speedKmh < 3 && distToPatient > Config.STALL_MIN_DISTANCE_M;
+  const currentTime = simulatedNowMs ?? now();
+
+  if (!isStalled) {
+    const existing = stallTrackers.get(ambulanceId);
+    if (existing && existing.promptSentAt) {
+      auditLog('STALL_RESOLVED', {
+        ambulanceId,
+        missionId: activeMission.id,
+        speedKmh,
+        distToPatient,
+      });
+      sendToAmbulance(ambulanceId, {
+        type: 'STALL_RESOLVED',
+        ambulanceId,
+        missionId: activeMission.id,
+        message: 'Normal speed resumed.',
+      });
+      broadcastToMission(activeMission.id, {
+        type: 'STALL_RESOLVED',
+        ambulanceId,
+        missionId: activeMission.id,
+      });
+    }
+    stallTrackers.delete(ambulanceId);
+    return;
+  }
+
+  // Ambulance is stalled
+  let tracker = stallTrackers.get(ambulanceId);
+  if (!tracker) {
+    tracker = {
+      ambulanceId,
+      missionId: activeMission.id,
+      stallStartedAt: currentTime,
+    };
+    stallTrackers.set(ambulanceId, tracker);
+    return;
+  }
+
+  const elapsedS = (currentTime - tracker.stallStartedAt) / 1000;
+  const thresholdS = Config.STALL_THRESHOLD_S / state.demoTimeScale;
+  const escalationS = Config.STALL_ESCALATION_S / state.demoTimeScale;
+
+  if (elapsedS >= thresholdS && !tracker.promptSentAt) {
+    tracker.promptSentAt = currentTime;
+    auditLog('STALL_WARNING_ISSUED', {
+      ambulanceId,
+      missionId: activeMission.id,
+      elapsedS,
+      speedKmh,
+      distToPatient,
+    });
+    sendToAmbulance(ambulanceId, {
+      type: 'STALL_WARNING',
+      missionId: activeMission.id,
+      ambulanceId,
+      message: 'Are you OK? Stationary vehicle detected. Tap to confirm or mission will redispatch.',
+      timeoutS: Math.round(escalationS),
+    });
+    broadcastToMission(activeMission.id, {
+      type: 'STALL_WARNING',
+      missionId: activeMission.id,
+      ambulanceId,
+      message: 'Ambulance stall detected. Awaiting driver confirmation.',
+    });
+  } else if (tracker.promptSentAt && ((currentTime - tracker.promptSentAt) / 1000) >= escalationS) {
+    auditLog('STALL_ESCALATED_REDISPATCH', {
+      ambulanceId,
+      missionId: activeMission.id,
+      waitedS: (currentTime - tracker.promptSentAt) / 1000,
+    });
+    stallTrackers.delete(ambulanceId);
+    reportBreakdown(activeMission.id, ambulanceId);
+  }
+}
+
+export function driverAcknowledgeStall(ambulanceId: string): boolean {
+  const tracker = stallTrackers.get(ambulanceId);
+  if (!tracker) return false;
+  auditLog('STALL_ACKNOWLEDGED_BY_DRIVER', { ambulanceId, missionId: tracker.missionId });
+  stallTrackers.delete(ambulanceId);
+  sendToAmbulance(ambulanceId, {
+    type: 'STALL_RESOLVED',
+    ambulanceId,
+    missionId: tracker.missionId,
+    message: 'Driver confirmed OK. Resuming mission.',
+  });
+  broadcastToMission(tracker.missionId, {
+    type: 'STALL_RESOLVED',
+    ambulanceId,
+    missionId: tracker.missionId,
+    message: 'Driver confirmed status.',
+  });
+  return true;
+}
+
+export function checkStallConditions(simulatedNowMs?: number): void {
+  const currentTime = simulatedNowMs ?? now();
+  for (const [ambulanceId, tracker] of Array.from(stallTrackers.entries())) {
+    const m = state.missions.get(tracker.missionId);
+    if (!m || m.assignedAmbulanceId !== ambulanceId || !['ASSIGNED', 'ENROUTE', 'ON_SCENE'].includes(m.status)) {
+      stallTrackers.delete(ambulanceId);
+      continue;
+    }
+    const elapsedS = (currentTime - tracker.stallStartedAt) / 1000;
+    const thresholdS = Config.STALL_THRESHOLD_S / state.demoTimeScale;
+    const escalationS = Config.STALL_ESCALATION_S / state.demoTimeScale;
+
+    if (elapsedS >= thresholdS && !tracker.promptSentAt) {
+      tracker.promptSentAt = currentTime;
+      auditLog('STALL_WARNING_ISSUED', {
+        ambulanceId,
+        missionId: m.id,
+        elapsedS,
+      });
+      sendToAmbulance(ambulanceId, {
+        type: 'STALL_WARNING',
+        missionId: m.id,
+        ambulanceId,
+        message: 'Are you OK? Stationary vehicle detected. Tap to confirm or mission will redispatch.',
+        timeoutS: Math.round(escalationS),
+      });
+      broadcastToMission(m.id, {
+        type: 'STALL_WARNING',
+        missionId: m.id,
+        ambulanceId,
+        message: 'Ambulance stall detected. Awaiting driver confirmation.',
+      });
+    } else if (tracker.promptSentAt && ((currentTime - tracker.promptSentAt) / 1000) >= escalationS) {
+      auditLog('STALL_ESCALATED_REDISPATCH', {
+        ambulanceId,
+        missionId: m.id,
+        waitedS: (currentTime - tracker.promptSentAt) / 1000,
+      });
+      stallTrackers.delete(ambulanceId);
+      reportBreakdown(m.id, ambulanceId);
+    }
+  }
 }
 
 // ── Status Updates ────────────────────────────────────────────────────────────

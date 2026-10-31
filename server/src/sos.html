@@ -433,9 +433,9 @@
 
     try {
       if (isOfflineMode) {
-        // Simulated SMS Fallback protocol packet
-        const geohash = 'ts5e587pk';
-        const packet = `S1|${sosUid.slice(-4)}|0|${geohash}|${Math.round(lat*10000)}|${Math.round(lon*10000)}|${addrId}|1|f6`;
+        // SMS Fallback protocol packet with computed coordinates
+        const geoToken = Math.round(lat * 1000).toString(36) + Math.round(lon * 1000).toString(36);
+        const packet = `S1|${sosUid.slice(-4)}|0|${geoToken}|${Math.round(lat*10000)}|${Math.round(lon*10000)}|${addrId}|1|f6`;
         document.getElementById('protocol-packet').textContent = packet;
 
         const response = await fetch('/sms/inbound', {

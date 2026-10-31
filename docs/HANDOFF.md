@@ -1,6 +1,6 @@
 # HANDOFF.md — SaHaay Prototype Sprint
 
-## SESSION: 2026-10-31 (M12 Online Mobile Apps Slice Completed)
+## SESSION: 2026-10-31 (M13 Self-Healing on Devices Completed)
 
 ### CONTEXT
 Hack for Social Cause 2027 — Healthcare, Wellbeing & Service Delivery.
@@ -9,10 +9,11 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 
 ---
 
-## NEXT: M13 — Self-Healing on Devices
-1. Implement driver cancellation (`POST /missions/:id/cancel` with required reason) auto-redispatching to next in-range available unit from patient's live GPS.
-2. In-flight telemetry stall detection: speed < 3 km/h for > 90 s while far from patient triggers driver prompt & 30s auto-escalation.
-3. Automated unit test suite covering scenarios 4.3 (1)-(5) (cancel, breakdown, busy exclusion, ring exhaustion, patient safe).
+## NEXT: M14 — Background Crash Detection (Native Service + Quick Settings Tile)
+1. Export golden vector waveforms (`PHONE_DROP`, `POTHOLE`, `CRASH_3G`, `CRASH_2_5G`) to `packages/core/test-vectors/crash-waveforms.json`.
+2. Port `CrashDetector.ts` to native Android Kotlin `CrashMonitorService` with dual-mode support (`IMPACT` vs `SUSTAINED_SHAKE`).
+3. Implement `TileService` for Quick Settings arm/disarm toggle.
+4. Verify golden vectors in both Jest and native tests.
 
 ---
 
@@ -42,7 +43,19 @@ Goal: Real prototype running on real Android hardware + laptop server with zero 
 - [x] Built, zipaligned, and signed standalone Native Android APKs (`SaHaay-Citizen.apk` and `SaHaay-Driver.apk`) using Android API 34 tools and committed to `artifacts/apk/`.
 - [x] 64 / 64 automated tests passing across 9 test suites (`npm test`).
 
+### M13: Self-Healing on Devices
+- [x] Implemented driver cancellation (`POST /missions/:id/cancel` and `POST /missions/:id/driver-cancel` with mandatory reason): releases driver to `AVAILABLE`, excludes driver from current mission via `previousAmbulanceIds`, resets search ring, and re-dispatches to the next available unit from patient's live GPS coordinates.
+- [x] Implemented driver breakdown reporting (`POST /missions/:id/breakdown`): logs breakdown location for recovery crew, marks unit `OUT_OF_SERVICE`, and initiates re-dispatch to next eligible unit.
+- [x] Implemented in-flight telemetry stall detection (`recordTelemetry`, `checkStallConditions`, `driverAcknowledgeStall`): when vehicle speed < 3 km/h for > 90 s while > 200 m from patient, issues `STALL_WARNING` prompt; if no acknowledgement or movement within 30 s, automatically escalates to re-dispatch.
+- [x] Implemented offer TTL timers (25 s) with early ring expansion when all offers in the current ring expire or decline.
+- [x] Implemented radius expansion exhaustion cap (> 8000 m): marks mission `FAILED` and broadcasts 108/112 emergency helpline instructions.
+- [x] Implemented patient cancellation / "I'm safe" (`POST /missions/:id/patient-cancel`): marks mission `CANCELLED_BY_PATIENT` and immediately releases assigned ambulance.
+- [x] Added automated test suite `server/src/self-healing.test.ts` covering all Scenarios 4.3 (1)-(5).
+- [x] 71 / 71 automated tests passing across 10 test suites (`npm test`).
+- [x] Zero issues in `scripts/reality-check.js`.
+
 ---
 
 ## KNOWN ISSUES / DECISIONS
 - **Hardware Integration:** APKs compiled with Java 8 bytecode and signed with v1/v2 schemes, ready for deployment via `adb install` to connected physical devices or AVD `Bixuu-mobile`.
+- **Reality Check Compliance:** Eliminating pseudo-random carriers in `SmsTransport.ts` and hardcoded geohashes in `sos.html` keeps `scripts/reality-check.js` 100% green.

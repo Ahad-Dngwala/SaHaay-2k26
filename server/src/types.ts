@@ -3,7 +3,7 @@
  * Core domain types for the SaHaay in-memory dispatch server.
  */
 
-export type AmbulanceStatus = 'AVAILABLE' | 'DISPATCHING' | 'ENROUTE' | 'ON_SCENE' | 'OFFLINE' | 'BREAKDOWN';
+export type AmbulanceStatus = 'AVAILABLE' | 'DISPATCHING' | 'ENROUTE' | 'ON_SCENE' | 'OFFLINE' | 'BREAKDOWN' | 'OUT_OF_SERVICE';
 
 export interface Ambulance {
   id: string;
@@ -26,7 +26,8 @@ export type MissionStatus =
   | 'COMPLETED'      // mission done
   | 'REDISPATCH'     // breakdown, searching for replacement
   | 'FAILED'         // exhausted all radii
-  | 'CANCELLED';     // patient cancelled
+  | 'CANCELLED'      // cancelled
+  | 'CANCELLED_BY_PATIENT'; // patient cancelled / safe
 
 export interface Mission {
   id: string;

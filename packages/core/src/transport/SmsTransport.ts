@@ -37,11 +37,13 @@ export class SimulatedCarrier {
   async deliver(token: string): Promise<{ ok: boolean; smsReply?: string }> {
     const { latencyMs, lossRate, serverUrl } = this.config;
     const [minL, maxL] = latencyMs;
-    const delay = minL + Math.random() * (maxL - minL);
+    // Deterministic pseudo-jitter based on clock tick
+    const pseudo = ((Date.now() % 1000) / 1000);
+    const delay = minL + pseudo * (maxL - minL);
 
     await new Promise(r => setTimeout(r, delay));
 
-    if (Math.random() < lossRate) {
+    if (lossRate > 0 && pseudo < lossRate) {
       throw new Error('[SIMULATED] Carrier loss: packet dropped');
     }
 

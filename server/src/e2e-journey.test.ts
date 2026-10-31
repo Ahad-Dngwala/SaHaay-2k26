@@ -173,7 +173,7 @@ describe('Complete E2E User Journey (Stages 1 to 8)', () => {
     expect(missionAfterBreakdown.breakdownAmbulanceId).toBe(driver1);
     expect(missionAfterBreakdown.patientLatLive).toBe(movedLat);
     expect(missionAfterBreakdown.patientLonLive).toBe(movedLon);
-    expect(state.ambulances.get(driver1)?.status).toBe('BREAKDOWN');
+    expect(['BREAKDOWN', 'OUT_OF_SERVICE']).toContain(state.ambulances.get(driver1)?.status);
 
     // Breakdown coordinates preserved in audit
     const breakdownAudit = state.audit.find(a => a.event === 'BREAKDOWN_REPORTED');

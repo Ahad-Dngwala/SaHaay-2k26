@@ -11,6 +11,10 @@ import {
   acceptMission,
   declineMission,
   reportBreakdown,
+  driverCancelMission,
+  cancelMissionByPatient,
+  recordTelemetry,
+  driverAcknowledgeStall,
   updateMissionStatus,
   updatePatientLocation,
   setDemoTimeScale,
@@ -314,6 +318,7 @@ export function createRouter(): Router {
     const updated = { ...ambu, lat, lon, ...(heading !== undefined ? { heading } : {}), ...(speedKmh !== undefined ? { speedKmh } : {}) };
     state.ambulances.set(id, updated);
     syncGrid(state.ambulances);
+    recordTelemetry(id, lat, lon, updated.speedKmh ?? 0);
     broadcastToAll({ type: 'AMBULANCE_LOCATION', ambulanceId: id, lat, lon, heading: updated.heading, speedKmh: updated.speedKmh });
     res.json({ ok: true });
   });
@@ -412,6 +417,70 @@ export function createRouter(): Router {
     const { ambulanceId } = req.body as { ambulanceId: string };
     reportBreakdown(req.params.id, ambulanceId);
     res.json({ ok: true });
+  });
+
+  router.post('/missions/:id/cancel', (req: Request, res: Response) => {
+    const { ambulanceId, driverId, reason } = req.body as { ambulanceId?: string; driverId?: string; reason?: string };
+    const ambId = ambulanceId || driverId;
+    if (ambId) {
+      if (!reason) {
+        res.status(400).json({ error: 'Cancellation reason is required' });
+        return;
+      }
+      const result = driverCancelMission(req.params.id, ambId, reason);
+      if (!result.ok) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+      res.json({ ok: true });
+    } else {
+      const result = cancelMissionByPatient(req.params.id, reason || 'Patient cancelled');
+      if (!result.ok) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+      res.json({ ok: true });
+    }
+  });
+
+  router.post('/missions/:id/driver-cancel', (req: Request, res: Response) => {
+    const { ambulanceId, driverId, reason } = req.body as { ambulanceId?: string; driverId?: string; reason?: string };
+    const ambId = ambulanceId || driverId;
+    if (!ambId || !reason) {
+      res.status(400).json({ error: 'ambulanceId and reason are required' });
+      return;
+    }
+    const result = driverCancelMission(req.params.id, ambId, reason);
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json({ ok: true });
+  });
+
+  router.post('/missions/:id/patient-cancel', (req: Request, res: Response) => {
+    const { reason } = req.body as { reason?: string };
+    const result = cancelMissionByPatient(req.params.id, reason || 'Patient marked safe');
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json({ ok: true });
+  });
+
+  router.post('/missions/:id/stall-ack', (req: Request, res: Response) => {
+    const { ambulanceId } = req.body as { ambulanceId: string };
+    if (!ambulanceId) {
+      res.status(400).json({ error: 'ambulanceId required' });
+      return;
+    }
+    const acknowledged = driverAcknowledgeStall(ambulanceId);
+    res.json({ ok: acknowledged });
+  });
+
+  router.post('/ambulances/:id/stall-ack', (req: Request, res: Response) => {
+    const acknowledged = driverAcknowledgeStall(req.params.id);
+    res.json({ ok: acknowledged });
   });
 
   router.patch('/missions/:id/status', (req: Request, res: Response) => {

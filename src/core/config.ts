@@ -35,11 +35,23 @@ export const Config = {
   /** Seconds to wait at each ring before expanding. */
   EXPAND_AFTER_S: 120,
 
+  /** Offer time-to-live before automatic timeout / decline (seconds). */
+  OFFER_TTL_S: 25,
+
   /** Multiplier applied to radius on each expansion step. */
   EXPAND_FACTOR: 2,
 
   /** Maximum search radius cap (metres). */
   MAX_RADIUS_M: 8000,
+
+  /** In-flight stall detection: maximum stationary duration before warning (seconds). */
+  STALL_THRESHOLD_S: 90,
+
+  /** Stall escalation: time driver has to respond to prompt before auto-redispatch (seconds). */
+  STALL_ESCALATION_S: 30,
+
+  /** Minimum distance to patient to trigger stall warning (metres). */
+  STALL_MIN_DISTANCE_M: 200,
 
   // ── Tracking ─────────────────────────────────────────────────────────────────
   /** Seconds between ambulance location pings (SMS-style silent updates). */
