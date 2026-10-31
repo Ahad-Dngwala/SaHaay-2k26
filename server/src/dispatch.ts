@@ -9,7 +9,7 @@ import { state } from './state';
 import { findAvailable, syncGrid } from './matching';
 import { auditLog } from './audit';
 import { Config } from './config-server';
-import { broadcastToAll, broadcastToMission } from './ws';
+import { broadcastToAll, broadcastToMission, sendToAmbulance } from './ws';
 import type { Mission, MissionStatus } from './types';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ function _searchRing(missionId: string): void {
   for (const candidate of eligible) {
     const ambu = state.ambulances.get(candidate.id);
     if (!ambu) continue;
-    broadcastToAll({
+    sendToAmbulance(candidate.id, {
       type: 'DRIVER_OFFER',
       ambulanceId: candidate.id,
       missionId,
@@ -121,16 +121,7 @@ function _searchRing(missionId: string): void {
   // Notify citizen
   broadcastToMission(missionId, { type: 'MISSION_SEARCHING', missionId, radiusM: m.currentRadiusM });
 
-  // For prototype demo: simulated driver accepts nearest offer after short 1.5s reaction delay
-  const winnerCandidateId = eligible[0].id;
-  const autoAcceptTimer = setTimeout(() => {
-    const cur = state.missions.get(missionId);
-    if (cur && cur.status === 'DISPATCHING' && cur.pendingOffers.includes(winnerCandidateId)) {
-      acceptMission(missionId, winnerCandidateId);
-    }
-  }, scaledMs(1.5));
-  if (autoAcceptTimer && (autoAcceptTimer as any).unref) (autoAcceptTimer as any).unref();
-
+  // Real drivers must explicitly accept via POST /missions/:id/accept
   // Schedule offer timeout → expansion if no one accepts
   _scheduleExpansion(missionId);
 }
@@ -174,7 +165,7 @@ function _tryExpand(missionId: string): void {
   updateMission(missionId, { pendingOffers: [], status: 'SEARCHING' });
 
   for (const aid of pendingOffers) {
-    broadcastToAll({ type: 'OFFER_CANCELLED', ambulanceId: aid, missionId });
+    sendToAmbulance(aid, { type: 'OFFER_CANCELLED', ambulanceId: aid, missionId });
   }
 
   const nextRadius = m.currentRadiusM * Config.EXPAND_FACTOR;
@@ -231,7 +222,7 @@ export function acceptMission(missionId: string, ambulanceId: string): AcceptRes
 
   // Cancel all other pending offers
   for (const loserId of loserIds) {
-    broadcastToAll({ type: 'OFFER_CANCELLED', ambulanceId: loserId, missionId });
+    sendToAmbulance(loserId, { type: 'OFFER_CANCELLED', ambulanceId: loserId, missionId });
   }
 
   // Cancel expansion timer (mission is now locked)
